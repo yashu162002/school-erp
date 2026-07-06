@@ -46,8 +46,10 @@ public class TeacherServiceImpl implements TeacherService {
                 teacher.getPhone());
         existing.setQualification(
                 teacher.getQualification());
-        existing.setSubjectSpecialization(
-                teacher.getSubjectSpecialization());
+        existing.setSubject(
+                teacher.getSubject());
+        existing.setExperience(
+                teacher.getExperience());
 
         return repository.save(existing);
     }

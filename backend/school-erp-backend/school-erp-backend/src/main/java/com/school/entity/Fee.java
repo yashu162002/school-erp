@@ -3,6 +3,9 @@ package com.school.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "fees")
 @Data
@@ -12,13 +15,24 @@ public class Fee {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "student_id")
     private Long studentId;
 
-    private Double amount;
+    @Column(name = "fee_type")
+    private String feeType;
 
-    private Double paidAmount;
+    @Column(name = "amount")
+    private BigDecimal amount;
 
-    private Double balanceAmount;
+    @Column(name = "paid_amount")
+    private BigDecimal paidAmount;
 
-    private String status;
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
+    @Column(name = "payment_status")
+    private String paymentStatus;
+
+    @Column(name = "remarks")
+    private String remarks;
 }

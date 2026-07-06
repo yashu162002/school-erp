@@ -18,20 +18,66 @@ import lombok.Setter;
 @Builder
 public class Student extends BaseEntity {
 
-@Column(unique = true, nullable = false)
-private String admissionNo;
+    @Column(unique = true, nullable = false)
+    private String admissionNo;
 
-@Column(nullable = false)
-private String firstName;
+    @Column(unique = true, nullable = false)
+    private String studentId;
 
-private String lastName;
+    @Column(nullable = false)
+    private String firstName;
 
-private String className;
+    private String lastName;
 
-private String section;
+    private String className;
 
-private String studentPhone;
+    private String section;
 
-private String email;
+    private String studentPhone;
 
+    private String email;
+
+    private String photoPath;
+
+    private String bloodGroup;
+
+    private String address;
+
+    private String dob;
+
+    private String gender;
+
+    private String rollNo;
+
+    private String religion;
+
+    private String category;
+
+    private String fatherName;
+
+    private String motherName;
+
+    private String guardian;
+
+    private String academicYear;
+
+    private java.time.LocalDate admissionDate;
+
+    private String transport;
+
+    private String hostel;
+
+    private String house;
+
+    private String emergencyContact;
+
+    private String medicalInfo;
+
+    private String status; // ACTIVE, INACTIVE, DEACTIVATED, TRANSFERRED, PROMOTED
+
+    private Double attendancePercentage;
+
+    private Double currentGpa;
+
+    private Integer currentRank;
 }

@@ -7,6 +7,7 @@ import com.school.entity.Student;
 import com.school.exception.ResourceNotFoundException;
 import com.school.repository.AttendanceRepository;
 import com.school.repository.ParentRepository;
+import com.school.repository.StudentRepository;
 import com.school.service.ParentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,9 +20,20 @@ public class ParentServiceImpl implements ParentService {
 
     private final ParentRepository repository;
     private final AttendanceRepository attendanceRepository;
+    private final StudentRepository studentRepository;
 
     @Override
     public Parent createParent(Parent parent) {
+
+        if (parent.getStudent() == null || parent.getStudent().getId() == null) {
+            throw new RuntimeException("Student is required");
+        }
+
+        Student student = studentRepository.findById(parent.getStudent().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Student Not Found"));
+
+        parent.setStudent(student);
+
         return repository.save(parent);
     }
 
@@ -35,14 +47,19 @@ public class ParentServiceImpl implements ParentService {
 
         Parent existing = repository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Parent Not Found"));
+                        new ResourceNotFoundException("Parent Not Found"));
 
         existing.setFatherName(parent.getFatherName());
         existing.setMotherName(parent.getMotherName());
         existing.setFatherPhone(parent.getFatherPhone());
         existing.setMotherPhone(parent.getMotherPhone());
         existing.setEmail(parent.getEmail());
+
+        if (parent.getStudent() != null && parent.getStudent().getId() != null) {
+            Student student = studentRepository.findById(parent.getStudent().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Student Not Found"));
+            existing.setStudent(student);
+        }
 
         return repository.save(existing);
     }
@@ -57,10 +74,13 @@ public class ParentServiceImpl implements ParentService {
 
         Parent parent = repository.findById(parentId)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Parent Not Found"));
+                        new ResourceNotFoundException("Parent Not Found"));
 
         Student student = parent.getStudent();
+
+        if (student == null) {
+            throw new RuntimeException("No student is linked to this parent");
+        }
 
         return ParentDashboardResponse.builder()
                 .parentId(parent.getId())
@@ -78,10 +98,12 @@ public class ParentServiceImpl implements ParentService {
 
         Parent parent = repository.findById(parentId)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Parent Not Found"));
+                        new ResourceNotFoundException("Parent Not Found"));
 
-        return attendanceRepository.findByStudent(
-                parent.getStudent());
+        if (parent.getStudent() == null) {
+            throw new RuntimeException("No student is linked to this parent");
+        }
+
+        return attendanceRepository.findByStudent(parent.getStudent());
     }
 }

@@ -31,6 +31,10 @@ public class ResultServiceImpl implements ResultService {
         Student student = studentRepository.findById(request.getStudentId())
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
+        // Auto-create placeholder exam/subject records for entered numeric IDs
+        examRepository.insertPlaceholder(request.getExamId(), "Exam #" + request.getExamId());
+        subjectRepository.insertPlaceholder(request.getSubjectId(), "Subject #" + request.getSubjectId());
+
         Exam exam = examRepository.findById(request.getExamId())
                 .orElseThrow(() -> new RuntimeException("Exam not found"));
 

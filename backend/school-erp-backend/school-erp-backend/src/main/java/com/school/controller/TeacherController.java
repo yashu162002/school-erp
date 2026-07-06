@@ -1,32 +1,39 @@
 package com.school.controller;
 
+import com.school.entity.Teacher;
+import com.school.service.TeacherService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/teachers")
+@RequiredArgsConstructor
 public class TeacherController {
 
+    private final TeacherService service;
+
     @GetMapping
-    public String getAllTeachers() {
-        return "Teacher List API";
+    public List<Teacher> getAllTeachers() {
+        return service.getAllTeachers();
     }
 
     @PostMapping
-    public String addTeacher() {
-        return "Teacher Added Successfully";
+    public Teacher addTeacher(@RequestBody Teacher teacher) {
+        return service.createTeacher(teacher);
     }
 
     @PutMapping("/{id}")
-    public String updateTeacher(
-            @PathVariable Long id) {
-
-        return "Teacher Updated Successfully. ID = " + id;
+    public Teacher updateTeacher(
+            @PathVariable Long id,
+            @RequestBody Teacher teacher) {
+        return service.updateTeacher(id, teacher);
     }
 
     @DeleteMapping("/{id}")
-    public String deleteTeacher(
+    public void deleteTeacher(
             @PathVariable Long id) {
-
-        return "Teacher Deleted Successfully. ID = " + id;
+        service.deleteTeacher(id);
     }
 }

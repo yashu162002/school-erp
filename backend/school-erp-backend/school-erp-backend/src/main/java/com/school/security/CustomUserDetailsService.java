@@ -3,10 +3,13 @@ package com.school.security;
 import com.school.entity.User;
 import com.school.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +26,12 @@ public class CustomUserDetailsService implements UserDetailsService {
                         new UsernameNotFoundException(
                                 "User not found: " + username));
 
-        return new UserPrincipal(user.getUsername(), user.getPassword());
+        return new UserPrincipal(
+                user.getUsername(),
+                user.getPassword(),
+                user.getEnabled() != null ? user.getEnabled() : true,
+                user.getLocked() != null ? user.getLocked() : false,
+                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+        );
     }
 }

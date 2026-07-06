@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* ---- Font families ---- */
+  --font-display: "Lexend", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* ---- Core palette (Slate-Indigo academic theme) ---- */
+  --color-background: #F5F6F8;
+  --color-surface: #FFFFFF;
+  --color-foreground: #161A2B;
+  --color-muted: #EEF0F4;
+  --color-muted-foreground: #6B7280;
+  --color-border: #DFE3EA;
+  --color-ring: #2A3EB1;
+
+  --color-primary: #24316B;
+  --color-primary-foreground: #FFFFFF;
+  --color-primary-hover: #1B2554;
+
+  --color-accent: #C98A00;
+  --color-accent-foreground: #1F1400;
+
+  --color-success: #16794F;
+  --color-success-foreground: #FFFFFF;
+  --color-warning: #B45309;
+  --color-warning-foreground: #FFFFFF;
+  --color-destructive: #B3261E;
+  --color-destructive-foreground: #FFFFFF;
+  --color-info: #1D5FBF;
+  --color-info-foreground: #FFFFFF;
+
+  /* ---- Role accent colors (used for badges / sidebar tab per role) ---- */
+  --color-role-admin: #24316B;
+  --color-role-teacher: #1D5FBF;
+  --color-role-student: #16794F;
+  --color-role-parent: #C98A00;
+
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    font-family: var(--font-sans);
+  }
+
+  /* Dark theme token overrides — toggled by adding .dark to <html> (see ThemeContext) */
+  .dark {
+    --color-background: #10131E;
+    --color-surface: #171B2A;
+    --color-foreground: #E7E9F0;
+    --color-muted: #1F2434;
+    --color-muted-foreground: #8B90A3;
+    --color-border: #2A2F42;
+    --color-ring: #6B7FE0;
+
+    --color-primary: #5266D6;
+    --color-primary-foreground: #FFFFFF;
+    --color-primary-hover: #6577E0;
+
+    --color-accent: #E0A83D;
+    --color-accent-foreground: #1F1400;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+  }
+
+  /* Visible keyboard focus everywhere */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Thin scrollbars for dense data tables / sidebars */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 999px;
+}

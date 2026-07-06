@@ -8,18 +8,23 @@ import com.school.entity.Fee;
 import com.school.entity.Result;
 import com.school.entity.Student;
 import com.school.entity.Timetable;
+import com.school.entity.User;
+import com.school.entity.LoginHistory;
 import com.school.repository.AnnouncementRepository;
 import com.school.repository.AttendanceRepository;
 import com.school.repository.FeeRepository;
 import com.school.repository.ResultRepository;
 import com.school.repository.StudentRepository;
 import com.school.repository.TimetableRepository;
+import com.school.repository.UserRepository;
+import com.school.repository.LoginHistoryRepository;
 import com.school.service.FileUploadService;
 import com.school.exception.ResourceNotFoundException;
 import com.school.service.StudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -39,6 +44,9 @@ public class StudentController {
     private final AnnouncementRepository announcementRepository;
     private final FeeRepository feeRepository;
     private final TimetableRepository timetableRepository;
+    private final UserRepository userRepository;
+    private final LoginHistoryRepository loginHistoryRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @PostMapping
     public StudentResponse create(
@@ -147,5 +155,93 @@ public class StudentController {
         return timetableRepository.findByClassNameAndSection(
                 student.getClassName(),
                 student.getSection());
+    }
+
+    @PostMapping("/{id}/reset-password")
+    public java.util.Map<String, String> resetPassword(
+            @PathVariable Long id,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+
+        Student student = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+
+        String plainPassword = (body != null && body.containsKey("password") && !body.get("password").trim().isEmpty())
+                ? body.get("password")
+                : java.util.UUID.randomUUID().toString().substring(0, 8);
+
+        User user = userRepository.findByUsername(student.getStudentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Student login user account not found"));
+
+        user.setPassword(passwordEncoder.encode(plainPassword));
+        userRepository.save(user);
+
+        java.util.Map<String, String> response = new java.util.HashMap<>();
+        response.put("username", student.getStudentId());
+        response.put("password", plainPassword);
+        return response;
+    }
+
+    @PostMapping("/{id}/toggle-login")
+    public StudentResponse toggleLogin(@PathVariable Long id) {
+        Student student = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+
+        User user = userRepository.findByUsername(student.getStudentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Student login user account not found"));
+
+        user.setEnabled(!Boolean.TRUE.equals(user.getEnabled()));
+        userRepository.save(user);
+
+        return service.getStudent(id);
+    }
+
+    @PostMapping("/{id}/toggle-lock")
+    public StudentResponse toggleLock(@PathVariable Long id) {
+        Student student = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+
+        User user = userRepository.findByUsername(student.getStudentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Student login user account not found"));
+
+        user.setLocked(!Boolean.TRUE.equals(user.getLocked()));
+        if (Boolean.FALSE.equals(user.getLocked())) {
+            user.setFailedLoginAttempts(0);
+        }
+        userRepository.save(user);
+
+        return service.getStudent(id);
+    }
+
+    @GetMapping("/{id}/login-history")
+    public List<LoginHistory> getLoginHistory(@PathVariable Long id) {
+        Student student = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+
+        return loginHistoryRepository.findByUsernameOrderByAttemptedAtDesc(student.getStudentId());
+    }
+
+    @PostMapping("/{id}/transfer")
+    public StudentResponse transferStudent(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> params) {
+
+        Student student = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+
+        if (params.containsKey("className")) {
+            student.setClassName(params.get("className"));
+        }
+        if (params.containsKey("section")) {
+            student.setSection(params.get("section"));
+        }
+        if (params.containsKey("academicYear")) {
+            student.setAcademicYear(params.get("academicYear"));
+        }
+        if (params.containsKey("status")) {
+            student.setStatus(params.get("status"));
+        }
+
+        repository.save(student);
+        return service.getStudent(id);
     }
 }

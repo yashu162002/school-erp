@@ -17,4 +17,14 @@ public class Subject extends BaseEntity {
     private String subjectCode;
 
     private String className;
+
+    private String section;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "subject_teacher_id")
+    private Teacher subjectTeacher;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "class_teacher_id")
+    private Teacher classTeacher;
 }

@@ -21,4 +21,19 @@ public class Exam extends BaseEntity {
     private LocalDate startDate;
 
     private LocalDate endDate;
+
+    private String academicYear;
+
+    private String examType; // e.g. UNIT_TEST, MID_TERM, FINAL_EXAM
+
+    private String description;
+
+    private String section;
+
+    private LocalDate resultDate;
+
+    private String status; // e.g. DRAFT, SCHEDULED, PUBLISHED
+
+    @Builder.Default
+    private Boolean enabled = false;
 }

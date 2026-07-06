@@ -9,5 +9,7 @@ import java.util.List;
 @Repository
 public interface FeeRepository extends JpaRepository<Fee, Long> {
 
+    // Get all fee records of a student
     List<Fee> findByStudentId(Long studentId);
+
 }

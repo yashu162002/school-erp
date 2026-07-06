@@ -18,6 +18,10 @@ public class LeaveRequest extends BaseEntity {
     @JoinColumn(name = "student_id")
     private Student student;
 
+    @ManyToOne
+    @JoinColumn(name = "teacher_id")
+    private Teacher teacher;
+
     private LocalDate fromDate;
 
     private LocalDate toDate;

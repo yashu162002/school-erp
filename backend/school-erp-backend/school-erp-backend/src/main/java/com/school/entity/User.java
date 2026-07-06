@@ -27,4 +27,17 @@ public class User extends BaseEntity {
 
     @Builder.Default
     private Boolean enabled = true;
+
+    @Builder.Default
+    private Boolean locked = false;
+
+    @Builder.Default
+    private Boolean passwordChanged = true;
+
+    @Builder.Default
+    private Integer failedLoginAttempts = 0;
+
+    private java.time.LocalDateTime lastLoginAt;
+
+    private String displayName;
 }
