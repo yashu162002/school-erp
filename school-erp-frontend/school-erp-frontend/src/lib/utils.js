@@ -8,3 +8,12 @@ import { twMerge } from "tailwind-merge";
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
+
+export function getStudentPhotoUrl(photoPath) {
+  if (!photoPath) return "";
+  const cleaned = photoPath.trim().replace(/^["']|["']$/g, "");
+  if (cleaned.startsWith("http")) {
+    return cleaned;
+  }
+  return `http://localhost:8080/${cleaned}`;
+}

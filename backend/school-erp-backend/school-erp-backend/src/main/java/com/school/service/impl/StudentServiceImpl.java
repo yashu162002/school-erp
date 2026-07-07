@@ -122,7 +122,7 @@ public class StudentServiceImpl implements StudentService {
 
         User user = User.builder()
                 .username(studentId)
-                .email(student.getEmail() != null && !student.getEmail().trim().isEmpty() ? student.getEmail() : studentId + "@school.com")
+                .email(resolveUniqueUserEmail(student.getEmail(), studentId, null))
                 .password(passwordEncoder.encode(plainPassword))
                 .role(Role.STUDENT)
                 .enabled(true)
@@ -199,7 +199,7 @@ public class StudentServiceImpl implements StudentService {
 
         // Update corresponding User record email and displayName
         userRepository.findByUsername(student.getStudentId()).ifPresent(user -> {
-            user.setEmail(student.getEmail() != null && !student.getEmail().trim().isEmpty() ? student.getEmail() : student.getStudentId() + "@school.com");
+            user.setEmail(resolveUniqueUserEmail(student.getEmail(), student.getStudentId(), user.getId()));
             user.setDisplayName(student.getFirstName() + " " + (student.getLastName() != null ? student.getLastName() : ""));
             userRepository.save(user);
         });
@@ -286,5 +286,20 @@ public class StudentServiceImpl implements StudentService {
                                 ? student.getCreatedAt().toString()
                                 : null)
                 .build();
+    }
+
+    private String resolveUniqueUserEmail(String requestedEmail, String username, Long userId) {
+        if (requestedEmail == null || requestedEmail.trim().isEmpty()) {
+            return username + "@school.com";
+        }
+        
+        java.util.Optional<User> existing = userRepository.findByEmail(requestedEmail);
+        if (existing.isPresent()) {
+            User existingUser = existing.get();
+            if (userId == null || !existingUser.getId().equals(userId)) {
+                return username + "@school.com";
+            }
+        }
+        return requestedEmail;
     }
 }

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { studentsApi } from "@/api/students.api";
+import { getStudentPhotoUrl } from "@/lib/utils";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
@@ -305,7 +306,26 @@ export function StudentsPage() {
                   <TableCell className="font-mono text-xs">{s.studentId}</TableCell>
                   <TableCell className="text-xs">{s.rollNo || "—"}</TableCell>
                   <TableCell className="font-medium text-foreground">
-                    {s.firstName} {s.lastName}
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-8 w-8 rounded-full overflow-hidden border border-border bg-muted shrink-0 flex items-center justify-center">
+                        {s.photoPath ? (
+                          <img
+                            src={getStudentPhotoUrl(s.photoPath)}
+                            alt={`${s.firstName} ${s.lastName}`}
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                            {s.firstName?.[0] || ""}{s.lastName?.[0] || ""}
+                          </span>
+                        )}
+                      </div>
+                      <span>{s.firstName} {s.lastName}</span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     {s.className ? (

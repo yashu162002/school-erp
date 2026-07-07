@@ -1,10 +1,15 @@
 import { z } from "zod";
 
 /**
- * Mirrors StudentRequest (com.school.dto.StudentRequest) exactly.
- * Only admissionNo, firstName, lastName are @NotBlank on the backend;
- * everything else is optional there, so it's optional here too.
+ * Preprocessor that coerses empty strings to undefined (satisfying .optional())
+ * and numeric strings to actual numbers, so that text inputs bind correctly.
  */
+const numericCoercible = z.preprocess((val) => {
+  if (val === "" || val === undefined || val === null) return undefined;
+  const num = Number(val);
+  return isNaN(num) ? val : num;
+}, z.number().optional());
+
 export const studentSchema = z.object({
   admissionNo: z.string().optional().or(z.literal("")),
   firstName: z.string().min(1, "First name is required"),
@@ -27,7 +32,8 @@ export const studentSchema = z.object({
   emergencyContact: z.string().optional().or(z.literal("")),
   medicalInfo: z.string().optional().or(z.literal("")),
   status: z.string().optional().or(z.literal("")),
-  attendancePercentage: z.number().optional().or(z.literal("")),
-  currentGpa: z.number().optional().or(z.literal("")),
-  currentRank: z.number().optional().or(z.literal("")),
+  attendancePercentage: numericCoercible,
+  currentGpa: numericCoercible,
+  currentRank: numericCoercible,
+  photoPath: z.string().optional().or(z.literal("")),
 });

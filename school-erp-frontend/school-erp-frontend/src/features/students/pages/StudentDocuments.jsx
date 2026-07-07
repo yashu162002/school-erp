@@ -1,6 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { studentPortalApi } from "@/api/studentPortal.api";
+import { getStudentPhotoUrl } from "@/lib/utils";
 import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingBlock } from "@/components/common/LoadingBlock";
 import { ErrorState } from "@/components/common/ErrorState";
@@ -186,7 +187,7 @@ export function StudentDocuments() {
             </div>
             <div class="photo-area">
               <div class="photo">
-                ${student.photoPath ? `<img src="${student.photoPath.startsWith('http') ? student.photoPath : 'http://localhost:8080/' + student.photoPath}" />` : '<div style="font-size: 10px; color: #6b7280">No Photo</div>'}
+                ${student.photoPath ? `<img src="${getStudentPhotoUrl(student.photoPath)}" />` : '<div style="font-size: 10px; color: #6b7280">No Photo</div>'}
               </div>
             </div>
             <div class="details">

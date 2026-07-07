@@ -1,6 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { studentPortalApi } from "@/api/studentPortal.api";
+import { getStudentPhotoUrl } from "@/lib/utils";
 import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingBlock } from "@/components/common/LoadingBlock";
 import { ErrorState } from "@/components/common/ErrorState";
@@ -54,7 +55,7 @@ export function StudentProfile() {
           <div className="relative h-24 w-24 shrink-0 rounded-full border-2 border-primary bg-muted overflow-hidden">
             {student.photoPath ? (
               <img 
-                src={student.photoPath.startsWith("http") ? student.photoPath : `http://localhost:8080/${student.photoPath}`} 
+                src={getStudentPhotoUrl(student.photoPath)} 
                 alt="Student Profile" 
                 className="h-full w-full object-cover"
               />

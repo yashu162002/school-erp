@@ -35,7 +35,7 @@ public class FileUploadServiceImpl implements FileUploadService {
                     StandardCopyOption.REPLACE_EXISTING
             );
 
-            return fileName;
+            return "uploads/students/" + fileName;
 
         } catch (IOException e) {
 

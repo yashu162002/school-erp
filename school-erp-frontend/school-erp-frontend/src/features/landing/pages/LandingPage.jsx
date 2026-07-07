@@ -1,19 +1,24 @@
 // src/features/landing/pages/LandingPage.jsx
+// NOTE: This file uses GSAP + Lenis for all animation/motion work.
+// Install once in your project:  npm install gsap lenis
 import Image1 from "../../../assets/1.webp";
 import Image2 from "../../../assets/2.webp";
 import Image3 from "../../../assets/3.webp";
 import Image4 from "../../../assets/4.webp";
 import Image5 from "../../../assets/5.webp";
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  GraduationCap, 
-  Users, 
-  BookOpen, 
-  Award, 
-  Calendar, 
-  MapPin, 
-  Phone, 
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Lenis from 'lenis';
+import {
+  GraduationCap,
+  Users,
+  BookOpen,
+  Award,
+  Calendar,
+  MapPin,
+  Phone,
   Mail,
   ChevronRight,
   Clock,
@@ -49,17 +54,7 @@ import {
   FaLinkedinIn
 } from "react-icons/fa";
 
-// Professional Animations Configuration
-const ANIMATION_CONFIG = {
-  fadeInUp: {
-    initial: { opacity: 0, y: 40 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] }
-  },
-  staggerChildren: {
-    animate: { transition: { staggerChildren: 0.1 } }
-  }
-};
+gsap.registerPlugin(ScrollTrigger);
 
 // Professional Data Configuration
 const CONFIG = {
@@ -112,6 +107,7 @@ const GALLERY_IMAGES = [
     description: "State-of-the-art science laboratory",
   },
 ];
+
 const LandingPage = () => {
   // State Management
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -124,11 +120,55 @@ const LandingPage = () => {
     message: ''
   });
   const [formErrors, setFormErrors] = useState({});
-  const [visibleSections, setVisibleSections] = useState({});
   const [currentYear] = useState(new Date().getFullYear());
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
-  const observerRef = useRef(null);
+  const [isLoaded, setIsLoaded] = useState(false);
   const galleryIntervalRef = useRef(null);
+  const lenisRef = useRef(null);
+
+  // Preloader
+  const preloaderRef = useRef(null);
+  const preloaderLogoRef = useRef(null);
+  const preloaderCountElRef = useRef(null);
+  const preloaderBarRef = useRef(null);
+
+  // Magnetic buttons
+  const magneticRefs = useRef([]);
+
+  // ---------- GSAP refs ----------
+  const mainRef = useRef(null);
+
+  // Hero
+  const badgeIconRef = useRef(null);
+  const heroBadgeRef = useRef(null);
+  const heroHeadingRef = useRef(null);
+  const heroParaRef = useRef(null);
+  const heroButtonsRef = useRef(null);
+  const heroTrustRef = useRef(null);
+  const statsGridRef = useRef(null);
+  const floatCard1Ref = useRef(null);
+  const floatCard2Ref = useRef(null);
+  const heroSectionRef = useRef(null);
+  const blobRef1 = useRef(null);
+  const blobRef2 = useRef(null);
+
+  // Ticker
+  const tickerContentRef = useRef(null);
+
+  // Scroll-reveal group containers
+  const aboutCardsRef = useRef(null);
+  const achievementsRef = useRef(null);
+  const programsRef = useRef(null);
+  const galleryContainerRef = useRef(null);
+  const facilitiesRef = useRef(null);
+  const testimonialsRef = useRef(null);
+  const contactItemsRef = useRef(null);
+  const contactFormRef = useRef(null);
+  const ctaContentRef = useRef(null);
+
+  // Gallery slide refs
+  const galleryImgRefs = useRef([]);
+  const galleryProgressRef = useRef(null);
 
   // Professional Data
   const stats = useMemo(() => [
@@ -231,35 +271,6 @@ const LandingPage = () => {
     };
   }, []);
 
-  // Scroll Observer for Animations
-  useEffect(() => {
-    const options = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.1
-    };
-
-    observerRef.current = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          setVisibleSections(prev => ({
-            ...prev,
-            [entry.target.id]: true
-          }));
-        }
-      });
-    }, options);
-
-    const sections = document.querySelectorAll('.section-animate');
-    sections.forEach(section => observerRef.current.observe(section));
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, []);
-
   // Scroll Handler for Header
   useEffect(() => {
     const handleScroll = () => {
@@ -269,11 +280,351 @@ const LandingPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // ---------- Lenis smooth scroll, wired into GSAP's ticker ----------
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.1,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      wheelMultiplier: 1
+    });
+    lenisRef.current = lenis;
+
+    lenis.on('scroll', ScrollTrigger.update);
+    const rafCallback = (time) => lenis.raf(time * 1000);
+    gsap.ticker.add(rafCallback);
+    gsap.ticker.lagSmoothing(0);
+
+    return () => {
+      gsap.ticker.remove(rafCallback);
+      lenis.destroy();
+      lenisRef.current = null;
+    };
+  }, []);
+
+  // ---------- Preloader ----------
+  useLayoutEffect(() => {
+    document.body.style.overflow = 'hidden';
+    const counter = { value: 0 };
+    const tl = gsap.timeline({
+      onComplete: () => {
+        document.body.style.overflow = '';
+        ScrollTrigger.refresh();
+      }
+    });
+
+    tl.to(preloaderLogoRef.current, {
+      scale: 1.06,
+      duration: 0.9,
+      repeat: 1,
+      yoyo: true,
+      ease: 'sine.inOut'
+    }, 0);
+
+    tl.to(counter, {
+      value: 100,
+      duration: 1.3,
+      ease: 'power2.inOut',
+      onUpdate: () => {
+        if (preloaderCountElRef.current) {
+          preloaderCountElRef.current.textContent = Math.floor(counter.value);
+        }
+      }
+    }, 0);
+
+    if (preloaderBarRef.current) {
+      tl.to(preloaderBarRef.current, {
+        width: '100%',
+        duration: 1.3,
+        ease: 'power2.inOut'
+      }, 0);
+    }
+
+    tl.call(() => setIsLoaded(true), [], 1.15);
+
+    tl.to(preloaderRef.current, {
+      yPercent: -100,
+      duration: 0.9,
+      ease: 'expo.inOut'
+    }, 1.3);
+
+    return () => tl.kill();
+  }, []);
+
+  // ---------- GSAP: hero entrance + ambient loops + scroll reveals ----------
+  useLayoutEffect(() => {
+    if (!isLoaded) return;
+    const ctx = gsap.context(() => {
+      // Hero entrance timeline — fires the instant the preloader clears
+      const heroTl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+
+      if (badgeIconRef.current) {
+        heroTl.fromTo(
+          badgeIconRef.current,
+          { opacity: 0, scale: 0.4, rotate: -180 },
+          { opacity: 1, scale: 1, rotate: 0, duration: 0.6 }
+        );
+      }
+      if (heroBadgeRef.current) {
+        heroTl.fromTo(
+          heroBadgeRef.current,
+          { opacity: 0, x: -30 },
+          { opacity: 1, x: 0, duration: 0.6 },
+          '-=0.3'
+        );
+      }
+      if (heroHeadingRef.current) {
+        heroTl.fromTo(
+          heroHeadingRef.current.children,
+          { opacity: 0, y: 60 },
+          { opacity: 1, y: 0, duration: 0.8, stagger: 0.12 },
+          '-=0.2'
+        );
+      }
+      if (heroParaRef.current) {
+        heroTl.fromTo(
+          heroParaRef.current,
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.6 },
+          '-=0.4'
+        );
+      }
+      if (heroButtonsRef.current) {
+        heroTl.fromTo(
+          heroButtonsRef.current.children,
+          { opacity: 0, y: 20, scale: 0.9 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.15 },
+          '-=0.3'
+        );
+      }
+      if (heroTrustRef.current) {
+        heroTl.fromTo(
+          heroTrustRef.current,
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.5 },
+          '-=0.2'
+        );
+      }
+      if (statsGridRef.current) {
+        heroTl.fromTo(
+          statsGridRef.current.children,
+          { opacity: 0, y: 40, scale: 0.85 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.1, ease: 'back.out(1.7)' },
+          '-=0.4'
+        );
+      }
+      if (floatCard1Ref.current && floatCard2Ref.current) {
+        heroTl.fromTo(
+          [floatCard1Ref.current, floatCard2Ref.current],
+          { opacity: 0, scale: 0.5 },
+          { opacity: 1, scale: 1, duration: 0.6, stagger: 0.15, ease: 'back.out(2)' },
+          '-=0.2'
+        );
+      }
+
+      // Ambient float loop for the two floating info cards
+      if (floatCard1Ref.current) {
+        gsap.to(floatCard1Ref.current, {
+          y: -14,
+          duration: 2.4,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut'
+        });
+      }
+      if (floatCard2Ref.current) {
+        gsap.to(floatCard2Ref.current, {
+          y: -14,
+          duration: 2.4,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+          delay: 1.1
+        });
+      }
+
+      // Seamless GSAP marquee (content is rendered twice; loop by -50%)
+      if (tickerContentRef.current) {
+        const totalWidth = tickerContentRef.current.scrollWidth / 2;
+        gsap.fromTo(
+          tickerContentRef.current,
+          { x: 0 },
+          { x: -totalWidth, duration: 26, ease: 'linear', repeat: -1 }
+        );
+      }
+
+      // Generic section header reveal — snappier expo curve, triggers earlier
+      // so it settles before the section is centered in view (no "wait" feel).
+      gsap.utils.toArray('.section-header').forEach((header) => {
+        gsap.fromTo(
+          header,
+          { opacity: 0, y: 40 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.9,
+            ease: 'expo.out',
+            scrollTrigger: { trigger: header, start: 'top 92%' }
+          }
+        );
+      });
+
+      // Staggered scroll-reveal groups (parent container -> animate its children)
+      const revealGroups = [
+        { ref: aboutCardsRef, y: 50, stagger: 0.1 },
+        { ref: achievementsRef, y: 25, stagger: 0.08 },
+        { ref: programsRef, y: 60, stagger: 0.12 },
+        { ref: facilitiesRef, y: 25, stagger: 0.06 },
+        { ref: testimonialsRef, y: 50, stagger: 0.12 },
+        { ref: contactItemsRef, y: 35, stagger: 0.1 }
+      ];
+
+      revealGroups.forEach(({ ref, y, stagger }) => {
+        if (!ref.current) return;
+        gsap.fromTo(
+          ref.current.children,
+          { opacity: 0, y },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.9,
+            stagger,
+            ease: 'expo.out',
+            scrollTrigger: { trigger: ref.current, start: 'top 90%' }
+          }
+        );
+      });
+
+      // Single-element reveals
+      if (galleryContainerRef.current) {
+        gsap.fromTo(
+          galleryContainerRef.current,
+          { opacity: 0, y: 50, scale: 0.97 },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 1,
+            ease: 'expo.out',
+            scrollTrigger: { trigger: galleryContainerRef.current, start: 'top 88%' }
+          }
+        );
+      }
+
+      if (contactFormRef.current) {
+        gsap.fromTo(
+          contactFormRef.current,
+          { opacity: 0, x: 40 },
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.9,
+            ease: 'expo.out',
+            scrollTrigger: { trigger: contactFormRef.current, start: 'top 90%' }
+          }
+        );
+      }
+
+      if (ctaContentRef.current) {
+        gsap.fromTo(
+          ctaContentRef.current.children,
+          { opacity: 0, y: 40 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            stagger: 0.08,
+            ease: 'expo.out',
+            scrollTrigger: { trigger: ctaContentRef.current, start: 'top 85%' }
+          }
+        );
+      }
+
+      // Scroll-scrubbed parallax on the hero background blobs — continuous
+      // motion tied directly to scroll position instead of a one-shot reveal.
+      if (blobRef1.current && heroSectionRef.current) {
+        gsap.to(blobRef1.current, {
+          y: 160,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: heroSectionRef.current,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 0.6
+          }
+        });
+      }
+      if (blobRef2.current && heroSectionRef.current) {
+        gsap.to(blobRef2.current, {
+          y: -120,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: heroSectionRef.current,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 0.6
+          }
+        });
+      }
+
+      // Magnetic buttons — the subtle cursor-pull agency sites use
+      const magnets = magneticRefs.current.filter(Boolean);
+      const magnetHandlers = magnets.map((el) => {
+        const onMove = (e) => {
+          const rect = el.getBoundingClientRect();
+          const relX = e.clientX - (rect.left + rect.width / 2);
+          const relY = e.clientY - (rect.top + rect.height / 2);
+          gsap.to(el, { x: relX * 0.3, y: relY * 0.4, duration: 0.5, ease: 'power2.out' });
+        };
+        const onLeave = () => {
+          gsap.to(el, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)' });
+        };
+        el.addEventListener('mousemove', onMove);
+        el.addEventListener('mouseleave', onLeave);
+        return { el, onMove, onLeave };
+      });
+
+      return () => {
+        magnetHandlers.forEach(({ el, onMove, onLeave }) => {
+          el.removeEventListener('mousemove', onMove);
+          el.removeEventListener('mouseleave', onLeave);
+        });
+      };
+    }, mainRef);
+
+    return () => ctx.revert();
+  }, [isLoaded]);
+
+  // ---------- GSAP: gallery crossfade whenever the active slide changes ----------
+  useEffect(() => {
+    galleryImgRefs.current.forEach((el, i) => {
+      if (!el) return;
+      if (i === currentGalleryIndex) {
+        gsap.set(el, { zIndex: 10 });
+        gsap.fromTo(
+          el,
+          { opacity: 0, scale: 1.08 },
+          { opacity: 1, scale: 1, duration: 1.1, ease: 'power2.out' }
+        );
+      } else {
+        gsap.set(el, { zIndex: 1 });
+        gsap.to(el, { opacity: 0, duration: 0.8, ease: 'power2.out' });
+      }
+    });
+
+    if (galleryProgressRef.current) {
+      gsap.to(galleryProgressRef.current, {
+        width: `${((currentGalleryIndex + 1) / GALLERY_IMAGES.length) * 100}%`,
+        duration: 0.8,
+        ease: 'power2.out'
+      });
+    }
+  }, [currentGalleryIndex]);
+
   // Form Handlers
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error for field
     if (formErrors[name]) {
       setFormErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -299,19 +650,22 @@ const LandingPage = () => {
     }
 
     setIsSubmitting(true);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
     setIsSubmitting(false);
     setFormData({ name: '', email: '', phone: '', message: '' });
-    // Show success message
     alert('Message sent successfully! We will get back to you soon.');
   }, [formData, validateForm]);
 
-  // Scroll to section handler
+  // Scroll to section handler — goes through Lenis so in-page nav matches
+  // the same smooth-scroll feel as the rest of the page.
   const scrollToSection = useCallback((sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (lenisRef.current) {
+        lenisRef.current.scrollTo(element, { offset: -20, duration: 1.2 });
+      } else {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
       setIsMenuOpen(false);
     }
   }, []);
@@ -319,7 +673,6 @@ const LandingPage = () => {
   // Gallery navigation handlers
   const goToGallerySlide = useCallback((index) => {
     setCurrentGalleryIndex(index);
-    // Reset interval
     if (galleryIntervalRef.current) {
       clearInterval(galleryIntervalRef.current);
       galleryIntervalRef.current = setInterval(() => {
@@ -329,7 +682,25 @@ const LandingPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white font-['Inter',_system-ui,_sans-serif] antialiased">
+    <div ref={mainRef} className="min-h-screen bg-white font-['Inter',_system-ui,_sans-serif] antialiased">
+      {/* Preloader — one clean, deliberate reveal instead of content settling in piecemeal */}
+      <div
+        ref={preloaderRef}
+        className="fixed inset-0 z-[100] bg-[#1a1a1a] flex flex-col items-center justify-center"
+        aria-hidden="true"
+      >
+        <div ref={preloaderLogoRef} className="bg-[#00A3E0] p-4 rounded-full mb-6">
+          <GraduationCap className="h-10 w-10 text-white" />
+        </div>
+        <div className="flex items-baseline text-white font-bold tracking-tight">
+          <span ref={preloaderCountElRef} className="text-5xl">0</span>
+          <span className="text-2xl ml-1">%</span>
+        </div>
+        <div className="w-48 h-[2px] bg-white/10 mt-6 overflow-hidden rounded-full">
+          <div ref={preloaderBarRef} className="h-full bg-[#00A3E0] rounded-full" style={{ width: '0%' }}></div>
+        </div>
+      </div>
+
       {/* Skip to content link for accessibility */}
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-white focus:p-4 focus:shadow-lg">
         Skip to main content
@@ -341,17 +712,17 @@ const LandingPage = () => {
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-6">
               <a href={`tel:${CONFIG.contact.phone}`} className="hover:text-[#00A3E0] transition-colors flex items-center gap-1.5">
-                <Phone className="h-3 w-3" /> 
+                <Phone className="h-3 w-3" />
                 <span>{CONFIG.contact.phone}</span>
               </a>
               <span className="text-[#555]">|</span>
               <a href={`mailto:${CONFIG.contact.email}`} className="hover:text-[#00A3E0] transition-colors flex items-center gap-1.5">
-                <Mail className="h-3 w-3" /> 
+                <Mail className="h-3 w-3" />
                 <span>{CONFIG.contact.email}</span>
               </a>
               <span className="text-[#555]">|</span>
               <span className="text-gray-400 flex items-center gap-1.5">
-                <Clock className="h-3 w-3" /> 
+                <Clock className="h-3 w-3" />
                 {CONFIG.contact.hours}
               </span>
             </div>
@@ -375,7 +746,7 @@ const LandingPage = () => {
       </div>
 
       {/* Header - Professional Navigation */}
-      <header 
+      <header
         className={`sticky top-0 z-50 transition-all duration-300 ${
           scrolled ? 'bg-white shadow-lg py-2' : 'bg-white/98 backdrop-blur-sm py-3'
         }`}
@@ -387,7 +758,7 @@ const LandingPage = () => {
           <div className="w-1/4 bg-[#003366]"></div>
           <div className="w-1/4 bg-[#00A3E0]"></div>
         </div>
-        
+
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center">
             <Link to="/" className="flex items-center space-x-3 group" aria-label="Trishul High School Home">
@@ -404,7 +775,7 @@ const LandingPage = () => {
                 <span className="block text-[10px] text-[#666] font-semibold tracking-[0.15em] uppercase">High School</span>
               </div>
             </Link>
-            
+
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-1" role="navigation" aria-label="Main navigation">
               {['About', 'Programs', 'Facilities', 'Testimonials', 'Contact'].map((item) => (
@@ -420,21 +791,21 @@ const LandingPage = () => {
             </nav>
 
             <div className="flex items-center space-x-3">
-              <Link 
-                to="/login" 
+              <Link
+                to="/login"
                 className="hidden md:block px-6 py-2.5 text-[11px] font-semibold tracking-[0.15em] uppercase text-[#1a1a1a] border-2 border-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white transition-all hover:scale-105"
                 aria-label="Login to dashboard"
               >
                 Login
               </Link>
-              <Link 
-                to="/login" 
+              <Link
+                to="/login"
                 className="hidden md:block px-6 py-2.5 text-[11px] font-semibold tracking-[0.15em] uppercase bg-[#00A3E0] text-white hover:bg-[#005B96] transition-all hover:scale-105 shadow-lg hover:shadow-xl"
                 aria-label="Apply now"
               >
                 Apply Now
               </Link>
-              <button 
+              <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
@@ -473,15 +844,13 @@ const LandingPage = () => {
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-[#00A3E0]/5 to-transparent"></div>
           <div className="absolute bottom-0 right-0 w-1/2 h-full bg-gradient-to-l from-[#005B96]/5 to-transparent"></div>
-          {/* Animated floating particles */}
           <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-[#00A3E0] rounded-full animate-float opacity-20"></div>
           <div className="absolute top-1/2 right-1/3 w-3 h-3 bg-[#005B96] rounded-full animate-float-delay opacity-20"></div>
           <div className="absolute bottom-1/3 left-1/2 w-2 h-2 bg-[#003366] rounded-full animate-float opacity-30"></div>
         </div>
-        
+
         <div className="container mx-auto px-4 relative">
           <div className="flex items-center justify-center space-x-6 md:space-x-12">
-            {/* Brand Name with Professional Animation */}
             <div className="flex items-center space-x-3 md:space-x-4">
               <div className="relative">
                 <div className="bg-[#1a1a1a] p-3 md:p-4 rounded-full border-2 border-[#00A3E0] animate-pulse-slow">
@@ -491,7 +860,7 @@ const LandingPage = () => {
                   <Zap className="h-3 w-3 md:h-3.5 md:w-3.5 text-white" />
                 </div>
               </div>
-              
+
               <div className="relative">
                 <div className="overflow-hidden">
                   <div className="flex items-baseline">
@@ -506,13 +875,11 @@ const LandingPage = () => {
                     </div>
                   </div>
                 </div>
-                {/* Animated underline */}
                 <div className="mt-2 h-[2px] w-full bg-gradient-to-r from-[#00A3E0] via-[#005B96] to-[#003366] animate-gradient bg-[length:200%_200%] rounded-full"></div>
                 <div className="mt-1 h-[1px] w-1/2 bg-gradient-to-r from-[#00A3E0] to-transparent animate-pulse-slow rounded-full"></div>
               </div>
             </div>
 
-            {/* Decorative Elements */}
             <div className="hidden md:flex items-center space-x-4">
               <div className="w-px h-12 bg-gradient-to-b from-transparent via-[#00A3E0] to-transparent"></div>
               <div className="text-left">
@@ -522,14 +889,9 @@ const LandingPage = () => {
               <div className="w-px h-12 bg-gradient-to-b from-transparent via-[#00A3E0] to-transparent"></div>
             </div>
 
-            {/* Animated Icons */}
             <div className="hidden lg:flex items-center space-x-6">
               {[Shield, Award, Target].map((Icon, i) => (
-                <div 
-                  key={i}
-                  className="group relative"
-                  style={{ animationDelay: `${i * 0.5}s` }}
-                >
+                <div key={i} className="group relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-[#00A3E0] to-[#003366] rounded-full blur opacity-20 group-hover:opacity-40 transition-opacity animate-pulse-slow"></div>
                   <Icon className="h-6 w-6 text-[#1a1a1a] group-hover:text-[#00A3E0] transition-colors relative" />
                 </div>
@@ -537,7 +899,6 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* Subtitle with animation */}
           <div className="text-center mt-4">
             <p className="text-xs md:text-sm text-[#555] tracking-widest animate-gradient bg-clip-text text-transparent bg-gradient-to-r from-[#00A3E0] via-[#005B96] to-[#003366] bg-[length:200%_200%]">
               <span className="inline-block animate-float">✦</span>
@@ -550,9 +911,8 @@ const LandingPage = () => {
 
       {/* Main Content */}
       <main id="main-content">
-        {/* Hero Section - Professional with Dynamic Elements */}
-        <section className="relative min-h-[90vh] flex items-center overflow-hidden" aria-label="Hero section">
-          {/* Background with Professional Gradient */}
+        {/* Hero Section */}
+        <section ref={heroSectionRef} className="relative min-h-[90vh] flex items-center overflow-hidden" aria-label="Hero section">
           <div className="absolute inset-0 bg-gradient-to-b from-[#f0f4f8] via-white to-[#e8edf3]">
             <div className="absolute inset-0 opacity-20">
               <div className="absolute top-0 right-0 w-2/3 h-full bg-gradient-to-l from-[#00A3E0]/10 to-transparent"></div>
@@ -560,10 +920,9 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* Animated Background Elements */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-10 right-10 w-96 h-96 bg-[#00A3E0] rounded-full blur-3xl animate-float opacity-10"></div>
-            <div className="absolute bottom-10 left-10 w-96 h-96 bg-[#005B96] rounded-full blur-3xl animate-float-delay opacity-10"></div>
+            <div ref={blobRef1} className="absolute top-10 right-10 w-96 h-96 bg-[#00A3E0] rounded-full blur-3xl opacity-10"></div>
+            <div ref={blobRef2} className="absolute bottom-10 left-10 w-96 h-96 bg-[#005B96] rounded-full blur-3xl opacity-10"></div>
             <div className="absolute top-20 left-20 opacity-5">
               <div className="w-32 h-32 border-8 border-[#00A3E0] rounded-full animate-spin-slow"></div>
             </div>
@@ -574,7 +933,7 @@ const LandingPage = () => {
               <div className="space-y-8">
                 {/* Brand Element */}
                 <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-12 h-12 bg-[#1a1a1a] rounded-full flex items-center justify-center border-2 border-[#00A3E0]">
+                  <div ref={badgeIconRef} className="w-12 h-12 bg-[#1a1a1a] rounded-full flex items-center justify-center border-2 border-[#00A3E0]">
                     <Zap className="h-6 w-6 text-[#00A3E0]" />
                   </div>
                   <div>
@@ -583,45 +942,47 @@ const LandingPage = () => {
                     <div className="w-32 h-[3px] bg-[#003366] mt-1"></div>
                   </div>
                 </div>
-                
+
                 {/* Badge */}
-                <div className="inline-flex items-center bg-white/90 backdrop-blur-sm px-4 py-2 shadow-lg border-l-4 border-[#00A3E0] rounded-r-lg">
+                <div ref={heroBadgeRef} className="inline-flex items-center bg-white/90 backdrop-blur-sm px-4 py-2 shadow-lg border-l-4 border-[#00A3E0] rounded-r-lg">
                   <Sparkles className="h-4 w-4 text-[#00A3E0] mr-2" />
                   <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#1a1a1a]">Admissions Open for {currentYear}-{currentYear + 1}</span>
                 </div>
-                
+
                 {/* Main Heading */}
-                <h1 className="text-6xl lg:text-8xl font-bold text-[#1a1a1a] leading-[0.9] tracking-tight">
-                  Accelerate
+                <h1 ref={heroHeadingRef} className="text-6xl lg:text-8xl font-bold text-[#1a1a1a] leading-[0.9] tracking-tight">
+                  <span className="block">Accelerate</span>
                   <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#00A3E0] via-[#005B96] to-[#003366] animate-gradient">
                     Learning
                   </span>
-                  Today
+                  <span className="block">Today</span>
                 </h1>
-                
-                <p className="text-lg text-[#555] max-w-lg leading-relaxed tracking-wide">
-                  Empowering young minds with dynamic education, innovative teaching, 
+
+                <p ref={heroParaRef} className="text-lg text-[#555] max-w-lg leading-relaxed tracking-wide">
+                  Empowering young minds with dynamic education, innovative teaching,
                   and a passion for excellence since 2010.
                 </p>
-                
-                <div className="flex flex-wrap gap-4">
-                  <Link 
-                    to="/login" 
-                    className="group px-8 py-4 bg-[#00A3E0] text-white font-semibold tracking-[0.1em] uppercase text-sm hover:bg-[#005B96] transition-all hover:scale-105 shadow-lg hover:shadow-xl flex items-center rounded-lg"
+
+                <div ref={heroButtonsRef} className="flex flex-wrap gap-4">
+                  <Link
+                    to="/login"
+                    ref={(el) => (magneticRefs.current[0] = el)}
+                    className="group px-8 py-4 bg-[#00A3E0] text-white font-semibold tracking-[0.1em] uppercase text-sm hover:bg-[#005B96] transition-colors shadow-lg hover:shadow-xl flex items-center rounded-lg will-change-transform"
                   >
                     Enroll Now
                     <Zap className="ml-2 h-4 w-4 group-hover:animate-pulse" />
                   </Link>
-                  <button 
+                  <button
                     onClick={() => scrollToSection('programs')}
-                    className="px-8 py-4 border-2 border-[#1a1a1a] text-[#1a1a1a] font-semibold tracking-[0.1em] uppercase text-sm hover:bg-[#1a1a1a] hover:text-white transition-all hover:scale-105 rounded-lg"
+                    ref={(el) => (magneticRefs.current[1] = el)}
+                    className="px-8 py-4 border-2 border-[#1a1a1a] text-[#1a1a1a] font-semibold tracking-[0.1em] uppercase text-sm hover:bg-[#1a1a1a] hover:text-white transition-colors rounded-lg will-change-transform"
                   >
                     Explore Programs
                   </button>
                 </div>
 
                 {/* Trust Indicators */}
-                <div className="flex items-center space-x-6 pt-4">
+                <div ref={heroTrustRef} className="flex items-center space-x-6 pt-4">
                   <div className="flex -space-x-2">
                     {[1,2,3,4].map((i) => (
                       <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-r from-[#00A3E0] to-[#003366] flex items-center justify-center text-white text-xs font-bold shadow-lg">
@@ -645,10 +1006,10 @@ const LandingPage = () => {
 
               {/* Stats Grid */}
               <div className="relative">
-                <div className="grid grid-cols-2 gap-4">
+                <div ref={statsGridRef} className="grid grid-cols-2 gap-4">
                   {stats.map((stat, index) => (
-                    <div 
-                      key={index} 
+                    <div
+                      key={index}
                       className="bg-white shadow-xl p-6 border-t-4 border-[#00A3E0] hover:shadow-2xl transition-all hover:-translate-y-2 group rounded-lg"
                     >
                       <div className="bg-[#f0f4f8] w-14 h-14 rounded-full flex items-center justify-center mb-3 group-hover:bg-[#00A3E0] transition-colors">
@@ -662,7 +1023,7 @@ const LandingPage = () => {
                 </div>
 
                 {/* Floating Cards */}
-                <div className="absolute -top-6 -right-6 animate-float">
+                <div ref={floatCard1Ref} className="absolute -top-6 -right-6">
                   <div className="bg-white shadow-2xl p-4 border-l-4 border-[#005B96] rounded-r-lg">
                     <div className="flex items-center space-x-3">
                       <div className="w-2 h-2 bg-[#005B96] rounded-full animate-pulse"></div>
@@ -673,7 +1034,7 @@ const LandingPage = () => {
                     </div>
                   </div>
                 </div>
-                <div className="absolute -bottom-4 -left-6 animate-float-delay">
+                <div ref={floatCard2Ref} className="absolute -bottom-4 -left-6">
                   <div className="bg-white shadow-2xl p-4 border-l-4 border-[#003366] rounded-r-lg">
                     <div className="flex items-center space-x-3">
                       <Shield className="h-5 w-5 text-[#003366]" />
@@ -689,7 +1050,7 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* News Ticker - Professional */}
+        {/* News Ticker - GSAP seamless marquee */}
         <div className="bg-[#1a1a1a] py-3 border-y-2 border-[#00A3E0] overflow-hidden">
           <div className="container mx-auto px-4">
             <div className="flex items-center">
@@ -698,9 +1059,9 @@ const LandingPage = () => {
                 <span className="text-white text-xs font-bold tracking-[0.2em] uppercase">Latest News</span>
               </div>
               <div className="relative flex-1 overflow-hidden">
-                <div className="animate-marquee whitespace-nowrap">
-                  {newsItems.map((item) => (
-                    <span key={item.id} className="text-white text-xs tracking-wider mx-8">
+                <div ref={tickerContentRef} className="flex whitespace-nowrap">
+                  {[...newsItems, ...newsItems].map((item, i) => (
+                    <span key={i} className="text-white text-xs tracking-wider mx-8 inline-block">
                       <span className="text-[#00A3E0] font-bold">[{item.tag}]</span> {item.text}
                     </span>
                   ))}
@@ -710,13 +1071,11 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* About Section - Professional */}
-        <section id="about" className="py-24 bg-white relative overflow-hidden section-animate">
+        {/* About Section */}
+        <section id="about" className="py-24 bg-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-[#f0f4f8] to-transparent opacity-50"></div>
           <div className="container mx-auto px-4 relative">
-            <div className={`text-center mb-16 transition-all duration-700 ${
-              visibleSections['about'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-            }`}>
+            <div className="section-header text-center mb-16">
               <div className="flex justify-center items-center space-x-3 mb-4">
                 <div className="w-12 h-12 bg-[#1a1a1a] rounded-full flex items-center justify-center border-2 border-[#00A3E0]">
                   <Zap className="h-6 w-6 text-[#00A3E0]" />
@@ -738,8 +1097,8 @@ const LandingPage = () => {
                 Excellence in education since 2010, shaping young minds for a better tomorrow
               </p>
             </div>
-            
-            <div className="grid md:grid-cols-3 gap-8">
+
+            <div ref={aboutCardsRef} className="grid md:grid-cols-3 gap-8">
               {[
                 {
                   icon: GraduationCap,
@@ -757,12 +1116,9 @@ const LandingPage = () => {
                   desc: "Balanced focus on academics, sports, arts, and character development for overall growth."
                 }
               ].map((item, index) => (
-                <div 
-                  key={index} 
-                  className={`group bg-white p-8 border-2 border-[#e8edf3] hover:border-[#00A3E0] transition-all duration-500 hover:-translate-y-3 relative rounded-lg ${
-                    visibleSections['about'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-                  }`}
-                  style={{ transitionDelay: `${index * 100}ms` }}
+                <div
+                  key={index}
+                  className="group bg-white p-8 border-2 border-[#e8edf3] hover:border-[#00A3E0] transition-all duration-500 hover:-translate-y-3 relative rounded-lg"
                 >
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#00A3E0] to-[#003366] transform scale-y-0 group-hover:scale-y-100 transition-transform duration-500"></div>
                   <div className="relative">
@@ -776,10 +1132,8 @@ const LandingPage = () => {
               ))}
             </div>
 
-            {/* Achievements - Professional */}
-            <div className={`mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 bg-[#f0f4f8] p-8 border-l-4 border-[#00A3E0] rounded-r-lg transition-all duration-700 ${
-              visibleSections['about'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-            }`} style={{ transitionDelay: '300ms' }}>
+            {/* Achievements */}
+            <div ref={achievementsRef} className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 bg-[#f0f4f8] p-8 border-l-4 border-[#00A3E0] rounded-r-lg">
               {achievements.map((item, index) => (
                 <div key={index} className="text-center group">
                   <div className="flex justify-center mb-2">
@@ -793,16 +1147,14 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Programs Section - Professional */}
-        <section id="programs" className="py-24 bg-[#f0f4f8] relative overflow-hidden section-animate">
+        {/* Programs Section */}
+        <section id="programs" className="py-24 bg-[#f0f4f8] relative overflow-hidden">
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute top-0 left-0 w-96 h-96 bg-[#00A3E0] rounded-full blur-3xl opacity-10"></div>
             <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#005B96] rounded-full blur-3xl opacity-10"></div>
           </div>
           <div className="container mx-auto px-4 relative">
-            <div className={`text-center mb-16 transition-all duration-700 ${
-              visibleSections['programs'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-            }`}>
+            <div className="section-header text-center mb-16">
               <div className="flex justify-center items-center space-x-3 mb-4">
                 <div className="w-12 h-12 bg-[#1a1a1a] rounded-full flex items-center justify-center border-2 border-[#00A3E0]">
                   <Zap className="h-6 w-6 text-[#00A3E0]" />
@@ -824,15 +1176,12 @@ const LandingPage = () => {
                 Comprehensive education from kindergarten to high school
               </p>
             </div>
-            
-            <div className="grid md:grid-cols-3 gap-8">
+
+            <div ref={programsRef} className="grid md:grid-cols-3 gap-8">
               {programs.map((program, index) => (
-                <div 
-                  key={index} 
-                  className={`group bg-white border-2 border-[#e8edf3] hover:border-[#00A3E0] transition-all duration-500 hover:-translate-y-4 overflow-hidden rounded-lg ${
-                    visibleSections['programs'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-                  }`}
-                  style={{ transitionDelay: `${index * 100}ms` }}
+                <div
+                  key={index}
+                  className="group bg-white border-2 border-[#e8edf3] hover:border-[#00A3E0] transition-all duration-500 hover:-translate-y-4 overflow-hidden rounded-lg"
                 >
                   <div className={`h-64 bg-gradient-to-r ${program.color} flex items-center justify-center relative`}>
                     <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition"></div>
@@ -857,8 +1206,8 @@ const LandingPage = () => {
                         </li>
                       ))}
                     </ul>
-                    <Link 
-                      to="/login" 
+                    <Link
+                      to="/login"
                       className="mt-6 inline-flex items-center text-[#1a1a1a] font-semibold text-sm tracking-[0.1em] uppercase hover:text-[#00A3E0] transition-colors group"
                     >
                       Learn More <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -870,13 +1219,11 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Gallery Section - Professional */}
-        <section id="gallery" className="py-24 bg-white relative overflow-hidden section-animate">
+        {/* Gallery Section */}
+        <section id="gallery" className="py-24 bg-white relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-[#f0f4f8] to-transparent opacity-30 pointer-events-none"></div>
           <div className="container mx-auto px-4 relative">
-            <div className={`text-center mb-16 transition-all duration-700 ${
-              visibleSections['gallery'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-            }`}>
+            <div className="section-header text-center mb-16">
               <div className="flex justify-center items-center space-x-3 mb-4">
                 <div className="w-12 h-12 bg-[#1a1a1a] rounded-full flex items-center justify-center border-2 border-[#00A3E0]">
                   <Zap className="h-6 w-6 text-[#00A3E0]" />
@@ -899,19 +1246,15 @@ const LandingPage = () => {
               </p>
             </div>
 
-            <div className={`relative overflow-hidden rounded-2xl shadow-2xl transition-all duration-700 ${
-              visibleSections['gallery'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-            }`}>
+            <div ref={galleryContainerRef} className="relative overflow-hidden rounded-2xl shadow-2xl">
               {/* Main Gallery Display */}
               <div className="relative aspect-[16/9] md:aspect-[16/8] bg-[#1a1a1a]">
                 {GALLERY_IMAGES.map((image, index) => (
                   <div
                     key={image.id}
-                    className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
-                      index === currentGalleryIndex 
-                        ? 'opacity-100 scale-100' 
-                        : 'opacity-0 scale-110'
-                    }`}
+                    ref={(el) => (galleryImgRefs.current[index] = el)}
+                    className="absolute inset-0"
+                    style={{ opacity: index === 0 ? 1 : 0 }}
                   >
                     <img
                       src={image.url}
@@ -919,10 +1262,8 @@ const LandingPage = () => {
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />
-                    {/* Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a]/80 via-transparent to-transparent"></div>
-                    
-                    {/* Image Info Overlay */}
+
                     <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
                       <div className="flex items-center space-x-3 mb-2">
                         <div className="w-1 h-8 bg-[#00A3E0]"></div>
@@ -935,7 +1276,6 @@ const LandingPage = () => {
                       </p>
                     </div>
 
-                    {/* Slide Counter */}
                     <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full">
                       <span className="text-white text-xs font-bold tracking-wider">
                         {String(index + 1).padStart(2, '0')} / {String(GALLERY_IMAGES.length).padStart(2, '0')}
@@ -947,24 +1287,25 @@ const LandingPage = () => {
                 {/* Navigation Arrows */}
                 <button
                   onClick={() => goToGallerySlide((currentGalleryIndex - 1 + GALLERY_IMAGES.length) % GALLERY_IMAGES.length)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/40 transition-all p-3 rounded-full text-white hover:scale-110"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/40 transition-all p-3 rounded-full text-white hover:scale-110 z-20"
                   aria-label="Previous image"
                 >
                   <ChevronRight className="h-6 w-6 rotate-180" />
                 </button>
                 <button
                   onClick={() => goToGallerySlide((currentGalleryIndex + 1) % GALLERY_IMAGES.length)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/40 transition-all p-3 rounded-full text-white hover:scale-110"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/40 transition-all p-3 rounded-full text-white hover:scale-110 z-20"
                   aria-label="Next image"
                 >
                   <ChevronRight className="h-6 w-6" />
                 </button>
 
-                {/* Progress Bar */}
-                <div className="absolute bottom-20 left-0 right-0 px-4 md:px-10">
+                {/* Progress Bar - animated via GSAP */}
+                <div className="absolute bottom-20 left-0 right-0 px-4 md:px-10 z-20">
                   <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-[#00A3E0] to-[#003366] rounded-full transition-all duration-1000"
+                    <div
+                      ref={galleryProgressRef}
+                      className="h-full bg-gradient-to-r from-[#00A3E0] to-[#003366] rounded-full"
                       style={{ width: `${((currentGalleryIndex + 1) / GALLERY_IMAGES.length) * 100}%` }}
                     ></div>
                   </div>
@@ -978,8 +1319,8 @@ const LandingPage = () => {
                     key={image.id}
                     onClick={() => goToGallerySlide(index)}
                     className={`relative aspect-video overflow-hidden rounded-lg transition-all duration-300 ${
-                      index === currentGalleryIndex 
-                        ? 'ring-2 ring-[#00A3E0] scale-95' 
+                      index === currentGalleryIndex
+                        ? 'ring-2 ring-[#00A3E0] scale-95'
                         : 'opacity-70 hover:opacity-100 hover:scale-95'
                     }`}
                   >
@@ -1015,12 +1356,10 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Facilities Section - Professional */}
-        <section id="facilities" className="py-24 bg-[#f0f4f8] relative overflow-hidden section-animate">
+        {/* Facilities Section */}
+        <section id="facilities" className="py-24 bg-[#f0f4f8] relative overflow-hidden">
           <div className="container mx-auto px-4">
-            <div className={`text-center mb-16 transition-all duration-700 ${
-              visibleSections['facilities'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-            }`}>
+            <div className="section-header text-center mb-16">
               <div className="flex justify-center items-center space-x-3 mb-4">
                 <div className="w-12 h-12 bg-[#1a1a1a] rounded-full flex items-center justify-center border-2 border-[#00A3E0]">
                   <Zap className="h-6 w-6 text-[#00A3E0]" />
@@ -1042,15 +1381,12 @@ const LandingPage = () => {
                 State-of-the-art infrastructure for holistic development
               </p>
             </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+
+            <div ref={facilitiesRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
               {facilities.map((facility, index) => (
-                <div 
-                  key={index} 
-                  className={`group bg-white p-6 text-center hover:bg-[#f0f4f8] hover:border-2 hover:border-[#00A3E0] transition-all duration-500 hover:-translate-y-2 cursor-pointer rounded-lg ${
-                    visibleSections['facilities'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-                  }`}
-                  style={{ transitionDelay: `${index * 50}ms` }}
+                <div
+                  key={index}
+                  className="group bg-white p-6 text-center hover:bg-[#f0f4f8] hover:border-2 hover:border-[#00A3E0] transition-all duration-500 hover:-translate-y-2 cursor-pointer rounded-lg"
                 >
                   <div className="bg-[#f0f4f8] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[#00A3E0] transition-colors border-2 border-[#e8edf3] group-hover:border-[#00A3E0]">
                     <facility.icon className="h-8 w-8 text-[#1a1a1a] group-hover:text-white transition-colors" />
@@ -1063,13 +1399,11 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Testimonials Section - Professional */}
-        <section id="testimonials" className="py-24 bg-white relative overflow-hidden section-animate">
+        {/* Testimonials Section */}
+        <section id="testimonials" className="py-24 bg-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-[#f0f4f8] to-transparent pointer-events-none"></div>
           <div className="container mx-auto px-4 relative">
-            <div className={`text-center mb-16 transition-all duration-700 ${
-              visibleSections['testimonials'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-            }`}>
+            <div className="section-header text-center mb-16">
               <div className="flex justify-center items-center space-x-3 mb-4">
                 <div className="w-12 h-12 bg-[#1a1a1a] rounded-full flex items-center justify-center border-2 border-[#00A3E0]">
                   <Zap className="h-6 w-6 text-[#00A3E0]" />
@@ -1091,19 +1425,16 @@ const LandingPage = () => {
                 Real stories from our school community
               </p>
             </div>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              {testimonials.map((testimonial, index) => (
-                <div 
-                  key={testimonial.id} 
-                  className={`bg-[#f0f4f8] p-8 border-l-4 border-[#00A3E0] hover:border-[#003366] transition-all duration-500 hover:-translate-y-2 shadow-lg group rounded-r-lg ${
-                    visibleSections['testimonials'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-                  }`}
-                  style={{ transitionDelay: `${index * 100}ms` }}
+
+            <div ref={testimonialsRef} className="grid md:grid-cols-3 gap-8">
+              {testimonials.map((testimonial) => (
+                <div
+                  key={testimonial.id}
+                  className="bg-[#f0f4f8] p-8 border-l-4 border-[#00A3E0] hover:border-[#003366] transition-all duration-500 hover:-translate-y-2 shadow-lg group rounded-r-lg"
                 >
                   <div className="flex items-center mb-6">
-                    <img 
-                      src={testimonial.image} 
+                    <img
+                      src={testimonial.image}
                       alt={testimonial.name}
                       className="w-16 h-16 rounded-full border-2 border-[#00A3E0]"
                       loading="lazy"
@@ -1132,7 +1463,7 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* CTA Section - Professional */}
+        {/* CTA Section */}
         <section className="py-24 bg-[#1a1a1a] relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 pointer-events-none">
             <div className="absolute top-0 left-0 w-96 h-96 bg-[#00A3E0] rounded-full blur-3xl -translate-x-48 -translate-y-48"></div>
@@ -1144,8 +1475,8 @@ const LandingPage = () => {
             <div className="w-1/4 bg-[#003366]"></div>
             <div className="w-1/4 bg-[#00A3E0]"></div>
           </div>
-          
-          <div className="container mx-auto px-4 text-center relative">
+
+          <div ref={ctaContentRef} className="container mx-auto px-4 text-center relative">
             <div className="flex justify-center items-center space-x-3 mb-6">
               <div className="w-12 h-12 bg-[#00A3E0] rounded-full flex items-center justify-center">
                 <Zap className="h-6 w-6 text-white" />
@@ -1156,29 +1487,31 @@ const LandingPage = () => {
                 <div className="w-32 h-[3px] bg-[#003366] mx-auto mt-1"></div>
               </div>
             </div>
-            
+
             <h2 className="text-5xl lg:text-7xl font-bold text-white mb-6 tracking-tight">
               Ready to<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00A3E0] via-[#005B96] to-[#003366] animate-gradient">
                 Accelerate Learning?
               </span>
             </h2>
-            
+
             <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto tracking-wide">
-              Join us for the academic year {currentYear}-{currentYear + 1}. 
+              Join us for the academic year {currentYear}-{currentYear + 1}.
               Limited seats available. Apply today!
             </p>
-            
+
             <div className="flex flex-wrap justify-center gap-4">
-              <Link 
-                to="/login" 
-                className="px-10 py-4 bg-[#00A3E0] text-white font-bold tracking-[0.1em] uppercase text-sm hover:bg-[#005B96] transition-all hover:scale-105 shadow-lg hover:shadow-xl rounded-lg"
+              <Link
+                to="/login"
+                ref={(el) => (magneticRefs.current[2] = el)}
+                className="px-10 py-4 bg-[#00A3E0] text-white font-bold tracking-[0.1em] uppercase text-sm hover:bg-[#005B96] transition-colors shadow-lg hover:shadow-xl rounded-lg will-change-transform"
               >
                 Apply Now
               </Link>
-              <Link 
-                to="/login" 
-                className="px-10 py-4 border-2 border-white text-white font-bold tracking-[0.1em] uppercase text-sm hover:bg-white hover:text-[#1a1a1a] transition-all hover:scale-105 rounded-lg"
+              <Link
+                to="/login"
+                ref={(el) => (magneticRefs.current[3] = el)}
+                className="px-10 py-4 border-2 border-white text-white font-bold tracking-[0.1em] uppercase text-sm hover:bg-white hover:text-[#1a1a1a] transition-colors rounded-lg will-change-transform"
               >
                 Parent Login
               </Link>
@@ -1186,13 +1519,11 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Contact Section - Professional */}
-        <section id="contact" className="py-24 bg-white relative overflow-hidden section-animate">
+        {/* Contact Section */}
+        <section id="contact" className="py-24 bg-white relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-[#f0f4f8] to-transparent opacity-50 pointer-events-none"></div>
           <div className="container mx-auto px-4 relative">
-            <div className={`text-center mb-16 transition-all duration-700 ${
-              visibleSections['contact'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-            }`}>
+            <div className="section-header text-center mb-16">
               <div className="flex justify-center items-center space-x-3 mb-4">
                 <div className="w-12 h-12 bg-[#1a1a1a] rounded-full flex items-center justify-center border-2 border-[#00A3E0]">
                   <Zap className="h-6 w-6 text-[#00A3E0]" />
@@ -1214,9 +1545,9 @@ const LandingPage = () => {
                 We'd love to hear from you. Visit us or reach out!
               </p>
             </div>
-            
+
             <div className="grid lg:grid-cols-2 gap-16">
-              <div className="space-y-6">
+              <div ref={contactItemsRef} className="space-y-6">
                 {[
                   {
                     icon: MapPin,
@@ -1259,12 +1590,9 @@ const LandingPage = () => {
                     )
                   }
                 ].map((item, index) => (
-                  <div 
-                    key={index} 
-                    className={`group bg-[#f0f4f8] p-6 hover:bg-white hover:border-2 hover:border-[#00A3E0] transition-all duration-500 border-l-4 border-[#00A3E0] rounded-r-lg ${
-                      visibleSections['contact'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-                    }`}
-                    style={{ transitionDelay: `${index * 100}ms` }}
+                  <div
+                    key={index}
+                    className="group bg-[#f0f4f8] p-6 hover:bg-white hover:border-2 hover:border-[#00A3E0] transition-all duration-500 border-l-4 border-[#00A3E0] rounded-r-lg"
                   >
                     <div className="flex items-start">
                       <div className="bg-white p-3 rounded-full group-hover:bg-[#00A3E0] transition-colors">
@@ -1274,9 +1602,9 @@ const LandingPage = () => {
                         <h4 className="font-bold text-[#1a1a1a] text-lg mb-2">{item.title}</h4>
                         <div className="text-[#555] leading-relaxed">{item.content}</div>
                         {item.link && (
-                          <a 
+                          <a
                             href={item.href}
-                            target="_blank" 
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center mt-3 text-[#1a1a1a] font-bold text-sm tracking-[0.1em] uppercase hover:text-[#00A3E0] transition-colors"
                           >
@@ -1289,9 +1617,7 @@ const LandingPage = () => {
                 ))}
 
                 {/* Social Follow */}
-                <div className={`bg-[#1a1a1a] p-8 border-l-4 border-[#00A3E0] rounded-r-lg ${
-                  visibleSections['contact'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-                }`} style={{ transitionDelay: '300ms' }}>
+                <div className="bg-[#1a1a1a] p-8 border-l-4 border-[#00A3E0] rounded-r-lg">
                   <h4 className="font-bold text-white text-lg mb-4 tracking-tight">Follow Us</h4>
                   <div className="flex space-x-4">
                     {[
@@ -1301,9 +1627,9 @@ const LandingPage = () => {
                       { Icon: FaYoutube, href: CONFIG.social.youtube, label: 'YouTube' },
                       { Icon: FaLinkedinIn, href: CONFIG.social.linkedin, label: 'LinkedIn' }
                     ].map((social, index) => (
-                      <a 
+                      <a
                         key={index}
-                        href={social.href} 
+                        href={social.href}
                         className="bg-white/10 p-3 rounded-full hover:bg-[#00A3E0] transition-all hover:scale-110"
                         aria-label={social.label}
                       >
@@ -1314,119 +1640,115 @@ const LandingPage = () => {
                 </div>
               </div>
 
-              {/* Contact Form - Professional */}
-              <div className={`transition-all duration-700 ${
-                visibleSections['contact'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-              }`} style={{ transitionDelay: '200ms' }}>
-                <form onSubmit={handleSubmit} className="bg-[#f0f4f8] p-10 border-2 border-[#e8edf3] hover:border-[#00A3E0] transition rounded-lg">
-                  <h3 className="text-3xl font-bold text-[#1a1a1a] mb-8 tracking-tight">Send a Message</h3>
-                  <div className="space-y-5">
-                    <div>
-                      <label htmlFor="name" className="block text-[#1a1a1a] font-bold mb-2 text-xs tracking-[0.1em] uppercase">
-                        Full Name *
-                      </label>
-                      <input 
-                        id="name"
-                        name="name"
-                        type="text" 
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        className={`w-full px-5 py-3.5 border-2 ${
-                          formErrors.name ? 'border-red-500' : 'border-[#dce1e8]'
-                        } focus:outline-none focus:border-[#00A3E0] transition bg-white rounded-lg`}
-                        placeholder="Enter your full name"
-                        aria-invalid={!!formErrors.name}
-                        aria-describedby={formErrors.name ? 'name-error' : undefined}
-                        required
-                      />
-                      {formErrors.name && (
-                        <p id="name-error" className="mt-1 text-xs text-red-500">{formErrors.name}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label htmlFor="email" className="block text-[#1a1a1a] font-bold mb-2 text-xs tracking-[0.1em] uppercase">
-                        Email Address *
-                      </label>
-                      <input 
-                        id="email"
-                        name="email"
-                        type="email" 
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className={`w-full px-5 py-3.5 border-2 ${
-                          formErrors.email ? 'border-red-500' : 'border-[#dce1e8]'
-                        } focus:outline-none focus:border-[#00A3E0] transition bg-white rounded-lg`}
-                        placeholder="your@email.com"
-                        aria-invalid={!!formErrors.email}
-                        aria-describedby={formErrors.email ? 'email-error' : undefined}
-                        required
-                      />
-                      {formErrors.email && (
-                        <p id="email-error" className="mt-1 text-xs text-red-500">{formErrors.email}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label htmlFor="phone" className="block text-[#1a1a1a] font-bold mb-2 text-xs tracking-[0.1em] uppercase">
-                        Phone Number
-                      </label>
-                      <input 
-                        id="phone"
-                        name="phone"
-                        type="tel" 
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        className="w-full px-5 py-3.5 border-2 border-[#dce1e8] focus:outline-none focus:border-[#00A3E0] transition bg-white rounded-lg"
-                        placeholder="Enter your phone number"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="message" className="block text-[#1a1a1a] font-bold mb-2 text-xs tracking-[0.1em] uppercase">
-                        Your Message *
-                      </label>
-                      <textarea 
-                        id="message"
-                        name="message"
-                        rows="4"
-                        value={formData.message}
-                        onChange={handleInputChange}
-                        className={`w-full px-5 py-3.5 border-2 ${
-                          formErrors.message ? 'border-red-500' : 'border-[#dce1e8]'
-                        } focus:outline-none focus:border-[#00A3E0] transition bg-white rounded-lg resize-none`}
-                        placeholder="How can we help you?"
-                        aria-invalid={!!formErrors.message}
-                        aria-describedby={formErrors.message ? 'message-error' : undefined}
-                        required
-                      ></textarea>
-                      {formErrors.message && (
-                        <p id="message-error" className="mt-1 text-xs text-red-500">{formErrors.message}</p>
-                      )}
-                    </div>
-                    <button 
-                      type="submit" 
-                      disabled={isSubmitting}
-                      className="w-full py-4 bg-[#00A3E0] text-white font-bold tracking-[0.1em] uppercase text-sm hover:bg-[#005B96] transition-all hover:scale-105 flex items-center justify-center group shadow-lg hover:shadow-xl rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          Send Message
-                          <Send className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                        </>
-                      )}
-                    </button>
+              {/* Contact Form */}
+              <form ref={contactFormRef} onSubmit={handleSubmit} className="bg-[#f0f4f8] p-10 border-2 border-[#e8edf3] hover:border-[#00A3E0] transition rounded-lg">
+                <h3 className="text-3xl font-bold text-[#1a1a1a] mb-8 tracking-tight">Send a Message</h3>
+                <div className="space-y-5">
+                  <div>
+                    <label htmlFor="name" className="block text-[#1a1a1a] font-bold mb-2 text-xs tracking-[0.1em] uppercase">
+                      Full Name *
+                    </label>
+                    <input
+                      id="name"
+                      name="name"
+                      type="text"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className={`w-full px-5 py-3.5 border-2 ${
+                        formErrors.name ? 'border-red-500' : 'border-[#dce1e8]'
+                      } focus:outline-none focus:border-[#00A3E0] transition bg-white rounded-lg`}
+                      placeholder="Enter your full name"
+                      aria-invalid={!!formErrors.name}
+                      aria-describedby={formErrors.name ? 'name-error' : undefined}
+                      required
+                    />
+                    {formErrors.name && (
+                      <p id="name-error" className="mt-1 text-xs text-red-500">{formErrors.name}</p>
+                    )}
                   </div>
-                </form>
-              </div>
+                  <div>
+                    <label htmlFor="email" className="block text-[#1a1a1a] font-bold mb-2 text-xs tracking-[0.1em] uppercase">
+                      Email Address *
+                    </label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className={`w-full px-5 py-3.5 border-2 ${
+                        formErrors.email ? 'border-red-500' : 'border-[#dce1e8]'
+                      } focus:outline-none focus:border-[#00A3E0] transition bg-white rounded-lg`}
+                      placeholder="your@email.com"
+                      aria-invalid={!!formErrors.email}
+                      aria-describedby={formErrors.email ? 'email-error' : undefined}
+                      required
+                    />
+                    {formErrors.email && (
+                      <p id="email-error" className="mt-1 text-xs text-red-500">{formErrors.email}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="phone" className="block text-[#1a1a1a] font-bold mb-2 text-xs tracking-[0.1em] uppercase">
+                      Phone Number
+                    </label>
+                    <input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className="w-full px-5 py-3.5 border-2 border-[#dce1e8] focus:outline-none focus:border-[#00A3E0] transition bg-white rounded-lg"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="message" className="block text-[#1a1a1a] font-bold mb-2 text-xs tracking-[0.1em] uppercase">
+                      Your Message *
+                    </label>
+                    <textarea
+                      id="message"
+                      name="message"
+                      rows="4"
+                      value={formData.message}
+                      onChange={handleInputChange}
+                      className={`w-full px-5 py-3.5 border-2 ${
+                        formErrors.message ? 'border-red-500' : 'border-[#dce1e8]'
+                      } focus:outline-none focus:border-[#00A3E0] transition bg-white rounded-lg resize-none`}
+                      placeholder="How can we help you?"
+                      aria-invalid={!!formErrors.message}
+                      aria-describedby={formErrors.message ? 'message-error' : undefined}
+                      required
+                    ></textarea>
+                    {formErrors.message && (
+                      <p id="message-error" className="mt-1 text-xs text-red-500">{formErrors.message}</p>
+                    )}
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-4 bg-[#00A3E0] text-white font-bold tracking-[0.1em] uppercase text-sm hover:bg-[#005B96] transition-all hover:scale-105 flex items-center justify-center group shadow-lg hover:shadow-xl rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        Send Message
+                        <Send className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Footer - Professional */}
+      {/* Footer */}
       <footer className="bg-[#1a1a1a] text-white pt-16 pb-8 border-t-4 border-[#00A3E0] relative">
         <div className="absolute top-0 left-0 w-full h-1 flex">
           <div className="w-1/4 bg-[#00A3E0]"></div>
@@ -1434,7 +1756,7 @@ const LandingPage = () => {
           <div className="w-1/4 bg-[#003366]"></div>
           <div className="w-1/4 bg-[#00A3E0]"></div>
         </div>
-        
+
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-12">
             <div>
@@ -1456,9 +1778,9 @@ const LandingPage = () => {
                   { Icon: FaTwitter, href: CONFIG.social.twitter, label: 'Twitter' },
                   { Icon: FaInstagram, href: CONFIG.social.instagram, label: 'Instagram' }
                 ].map((social, index) => (
-                  <a 
+                  <a
                     key={index}
-                    href={social.href} 
+                    href={social.href}
                     className="text-gray-400 hover:text-[#00A3E0] transition-colors"
                     aria-label={social.label}
                   >
@@ -1543,14 +1865,6 @@ const LandingPage = () => {
       </footer>
 
       <style>{`
-        @keyframes marquee {
-          0% { transform: translateX(100%); }
-          100% { transform: translateX(-100%); }
-        }
-        .animate-marquee {
-          animation: marquee 30s linear infinite;
-          display: inline-block;
-        }
         @keyframes spin-slow {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
