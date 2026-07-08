@@ -36,6 +36,11 @@ public class AuthController {
             HttpServletRequest servletRequest) {
 
         String ipAddress = servletRequest.getRemoteAddr();
+        String userAgent = servletRequest.getHeader("User-Agent");
+        String browser = parseBrowser(userAgent);
+        String os = parseOS(userAgent);
+        String device = parseDevice(userAgent);
+
         User user = userRepository.findByUsername(request.getUsername())
                 .orElse(null);
 
@@ -45,18 +50,21 @@ public class AuthController {
                     .username(request.getUsername())
                     .ipAddress(ipAddress)
                     .status("FAILED")
+                    .browser(browser)
+                    .os(os)
+                    .device(device)
                     .build();
             loginHistoryRepository.save(history);
             throw new ResourceNotFoundException("User Not Found");
         }
 
         if (Boolean.TRUE.equals(user.getLocked())) {
-            recordFailedAttempt(user, ipAddress);
+            recordFailedAttempt(user, ipAddress, servletRequest);
             throw new BadRequestException("Your account is locked. Please contact the administrator.");
         }
 
         if (Boolean.FALSE.equals(user.getEnabled())) {
-            recordFailedAttempt(user, ipAddress);
+            recordFailedAttempt(user, ipAddress, servletRequest);
             throw new BadRequestException("Your account is deactivated.");
         }
 
@@ -66,12 +74,12 @@ public class AuthController {
             if (attempts >= 5) {
                 user.setLocked(true);
                 userRepository.save(user);
-                recordFailedAttempt(user, ipAddress);
-                auditLogService.log(user.getUsername(), user.getRole().name(), "ACCOUNT_LOCKED", "Account locked due to 5 consecutive failed login attempts");
+                recordFailedAttempt(user, ipAddress, servletRequest);
+                auditLogService.log(user.getUsername(), user.getRole().name(), "ACCOUNT_LOCKED", "AUTH", ipAddress, "Account locked due to 5 consecutive failed login attempts");
                 throw new BadRequestException("Your account has been locked due to 5 consecutive failed attempts. Contact admin.");
             }
             userRepository.save(user);
-            recordFailedAttempt(user, ipAddress);
+            recordFailedAttempt(user, ipAddress, servletRequest);
             throw new BadRequestException("Invalid Password");
         }
 
@@ -85,10 +93,13 @@ public class AuthController {
                 .username(user.getUsername())
                 .ipAddress(ipAddress)
                 .status("SUCCESS")
+                .browser(browser)
+                .os(os)
+                .device(device)
                 .build();
         loginHistoryRepository.save(history);
 
-        auditLogService.log(user.getUsername(), user.getRole().name(), "USER_LOGIN", "User logged in successfully");
+        auditLogService.log(user.getUsername(), user.getRole().name(), "USER_LOGIN", "AUTH", ipAddress, "User logged in successfully");
 
         String token = jwtService.generateToken(
                 user.getId(),
@@ -103,7 +114,8 @@ public class AuthController {
     @PostMapping("/change-password")
     public String changePassword(
             @RequestBody PasswordChangeRequest request,
-            Principal principal) {
+            Principal principal,
+            HttpServletRequest servletRequest) {
 
         if (principal == null) {
             throw new BadRequestException("User not authenticated");
@@ -120,18 +132,47 @@ public class AuthController {
         user.setPasswordChanged(true);
         userRepository.save(user);
 
-        auditLogService.log(user.getUsername(), user.getRole().name(), "PASSWORD_RESET", "Password changed by user");
+        auditLogService.log(user.getUsername(), user.getRole().name(), "PASSWORD_RESET", "AUTH", servletRequest.getRemoteAddr(), "Password changed by user");
 
         return "Password changed successfully";
     }
 
-    private void recordFailedAttempt(User user, String ipAddress) {
+    private void recordFailedAttempt(User user, String ipAddress, HttpServletRequest servletRequest) {
+        String userAgent = servletRequest.getHeader("User-Agent");
         LoginHistory history = LoginHistory.builder()
                 .user(user)
                 .username(user.getUsername())
                 .ipAddress(ipAddress)
                 .status("FAILED")
+                .browser(parseBrowser(userAgent))
+                .os(parseOS(userAgent))
+                .device(parseDevice(userAgent))
                 .build();
         loginHistoryRepository.save(history);
+    }
+
+    private String parseOS(String userAgent) {
+        if (userAgent == null) return "Unknown";
+        if (userAgent.contains("Windows")) return "Windows";
+        if (userAgent.contains("Macintosh") || userAgent.contains("Mac OS")) return "macOS";
+        if (userAgent.contains("Linux")) return "Linux";
+        if (userAgent.contains("Android")) return "Android";
+        if (userAgent.contains("iPhone") || userAgent.contains("iPad")) return "iOS";
+        return "Unknown";
+    }
+
+    private String parseBrowser(String userAgent) {
+        if (userAgent == null) return "Unknown";
+        if (userAgent.contains("Chrome")) return "Chrome";
+        if (userAgent.contains("Firefox")) return "Firefox";
+        if (userAgent.contains("Safari") && !userAgent.contains("Chrome")) return "Safari";
+        if (userAgent.contains("Edge")) return "Edge";
+        return "Browser";
+    }
+
+    private String parseDevice(String userAgent) {
+        if (userAgent == null) return "Desktop";
+        if (userAgent.contains("Mobi") || userAgent.contains("Android") || userAgent.contains("iPhone")) return "Mobile";
+        return "Desktop";
     }
 }

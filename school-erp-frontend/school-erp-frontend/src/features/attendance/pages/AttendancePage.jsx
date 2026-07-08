@@ -183,6 +183,7 @@ export function AttendancePage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Student</TableHead>
+                    <TableHead>Subject</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Remarks</TableHead>
                   </TableRow>
@@ -192,6 +193,9 @@ export function AttendancePage() {
                     <TableRow key={r.id}>
                       <TableCell>
                         {r.student ? `${r.student.firstName} ${r.student.lastName}` : "—"}
+                      </TableCell>
+                      <TableCell className="text-xs font-semibold text-primary">
+                        {r.subjectName || "Daily"}
                       </TableCell>
                       <TableCell>
                         <Badge variant={statusVariant[r.status] || "secondary"}>{r.status}</Badge>

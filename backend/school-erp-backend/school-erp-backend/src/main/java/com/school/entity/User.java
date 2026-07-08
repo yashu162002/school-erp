@@ -40,4 +40,10 @@ public class User extends BaseEntity {
     private java.time.LocalDateTime lastLoginAt;
 
     private String displayName;
+
+    private java.time.LocalDateTime lastPasswordResetDate;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<LoginHistory> loginHistories = new java.util.ArrayList<>();
 }

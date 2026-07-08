@@ -33,6 +33,22 @@ public class TeacherResponse {
 
     private String assignedSubjects;
 
+    private String department;
+
+    private String dob;
+
+    private String gender;
+
+    private String address;
+
+    private String joiningDate;
+
+    private Double salary;
+
+    private String employmentType;
+
+    private String status;
+
     private Boolean active; // maps to user.enabled
 
     private Boolean locked; // maps to user.locked

@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 public interface ExamRepository
         extends JpaRepository<Exam, Long> {
 
+    java.util.List<Exam> findByClassNameAndSectionAndStatus(String className, String section, String status);
+
     @Modifying
     @Transactional
     @Query(value = "INSERT INTO exams (id, exam_name, created_at, updated_at) VALUES (:id, :name, NOW(), NOW()) ON CONFLICT (id) DO NOTHING", nativeQuery = true)

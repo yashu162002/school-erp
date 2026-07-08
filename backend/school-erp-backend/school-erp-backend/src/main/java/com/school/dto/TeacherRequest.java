@@ -34,5 +34,21 @@ public class TeacherRequest {
 
     private String assignedSubjects;
 
+    private String department;
+
+    private String dob;
+
+    private String gender;
+
+    private String address;
+
+    private String joiningDate;
+
+    private Double salary;
+
+    private String employmentType;
+
+    private String status;
+
     private String password; // Optional, auto-generated if blank
 }

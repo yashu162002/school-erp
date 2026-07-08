@@ -14,6 +14,7 @@ public interface SubjectRepository
 
     List<Subject> findByClassName(String className);
     List<Subject> findByClassNameAndSection(String className, String section);
+    java.util.List<Subject> findByClassNameAndSectionAndSubjectName(String className, String section, String subjectName);
 
     @Modifying
     @Transactional

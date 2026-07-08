@@ -53,4 +53,28 @@ public class Teacher extends BaseEntity {
 
     @Column(name = "assigned_subjects")
     private String assignedSubjects;
+
+    @Column(name = "department")
+    private String department;
+
+    @Column(name = "dob")
+    private String dob;
+
+    @Column(name = "gender")
+    private String gender;
+
+    @Column(name = "address", length = 1000)
+    private String address;
+
+    @Column(name = "joining_date")
+    private String joiningDate;
+
+    @Column(name = "salary")
+    private Double salary;
+
+    @Column(name = "employment_type")
+    private String employmentType;
+
+    @Column(name = "status")
+    private String status;
 }

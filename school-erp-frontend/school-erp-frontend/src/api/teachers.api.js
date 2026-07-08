@@ -15,4 +15,9 @@ export const teachersApi = {
   create: (payload) => apiClient.post(ENDPOINTS.teachers.create, payload).then((r) => r.data),
   update: (id, payload) => apiClient.put(ENDPOINTS.teachers.update(id), payload).then((r) => r.data),
   remove: (id) => apiClient.delete(ENDPOINTS.teachers.remove(id)).then((r) => r.data),
+
+  resetPassword: (id, payload) => apiClient.post(`${ENDPOINTS.teachers.list}/${id}/reset-password`, payload).then((r) => r.data),
+  toggleLogin: (id) => apiClient.post(`${ENDPOINTS.teachers.list}/${id}/toggle-login`).then((r) => r.data),
+  toggleLock: (id) => apiClient.post(`${ENDPOINTS.teachers.list}/${id}/toggle-lock`).then((r) => r.data),
+  getLoginHistory: (id) => apiClient.get(`${ENDPOINTS.teachers.list}/${id}/login-history`).then((r) => r.data),
 };

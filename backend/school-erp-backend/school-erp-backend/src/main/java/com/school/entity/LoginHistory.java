@@ -27,4 +27,14 @@ public class LoginHistory extends BaseEntity {
 
     @Builder.Default
     private LocalDateTime attemptedAt = LocalDateTime.now();
+
+    private String device;
+
+    private String browser;
+
+    private String os;
+
+    private String location;
+
+    private LocalDateTime logoutTime;
 }

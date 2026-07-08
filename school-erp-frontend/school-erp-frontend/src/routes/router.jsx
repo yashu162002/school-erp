@@ -29,6 +29,10 @@ import { NotificationsPage } from "@/features/notifications/pages/NotificationsP
 import { VoiceCallsPage } from "@/features/voiceCalls/pages/VoiceCallsPage";
 import { FeesPage } from "@/features/fees/pages/FeesPage";
 import LandingPage from "@/features/landing/pages/LandingPage";
+import { TeacherDashboard } from "@/features/dashboard/pages/TeacherDashboard";
+import { TeacherAttendance } from "@/features/teachers/pages/TeacherAttendance";
+import { TeacherMarksEntry } from "@/features/teachers/pages/TeacherMarksEntry";
+import { AuditLogsPage } from "@/features/auditLogs/pages/AuditLogsPage";
 
 export const router = createBrowserRouter([
   {
@@ -64,12 +68,11 @@ export const router = createBrowserRouter([
               { path: "/admin/notifications", element: <NotificationsPage /> },
               { path: "/admin/voice-calls", element: <VoiceCallsPage /> },
               { path: "/admin/fees", element: <FeesPage /> },
+              { path: "/admin/audit-logs", element: <AuditLogsPage /> },
             ],
           },
         ],
       },
-      // For now, redirect other roles to admin dashboard
-      // Later you can add teacher/student/parent routes
       // Student Specific Routes
       {
         element: <RoleGuard allow={[ROLES.STUDENT]} />,
@@ -90,14 +93,27 @@ export const router = createBrowserRouter([
           },
         ],
       },
-      // Teacher / Parent Redirect / Guards
+      // Teacher Specific Routes
       {
-        element: <RoleGuard allow={[ROLES.TEACHER, ROLES.PARENT]} />,
+        element: <RoleGuard allow={[ROLES.TEACHER]} />,
         children: [
           {
             element: <DashboardLayout />,
             children: [
-              { path: "/teacher/*", element: <Navigate to="/admin/dashboard" replace /> },
+              { path: "/teacher/dashboard", element: <TeacherDashboard /> },
+              { path: "/teacher/attendance", element: <TeacherAttendance /> },
+              { path: "/teacher/marks", element: <TeacherMarksEntry /> },
+            ],
+          },
+        ],
+      },
+      // Parent Redirect / Guards
+      {
+        element: <RoleGuard allow={[ROLES.PARENT]} />,
+        children: [
+          {
+            element: <DashboardLayout />,
+            children: [
               { path: "/parent/*", element: <Navigate to="/admin/dashboard" replace /> },
             ],
           },

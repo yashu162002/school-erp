@@ -1,16 +1,19 @@
 package com.school.service;
 
-import com.school.entity.Teacher;
+import com.school.dto.TeacherRequest;
+import com.school.dto.TeacherResponse;
 
 import java.util.List;
 
 public interface TeacherService {
 
-    Teacher createTeacher(Teacher teacher);
+    TeacherResponse createTeacher(TeacherRequest request);
 
-    List<Teacher> getAllTeachers();
+    List<TeacherResponse> getAllTeachers();
 
-    Teacher updateTeacher(Long id, Teacher teacher);
+    TeacherResponse getTeacher(Long id);
+
+    TeacherResponse updateTeacher(Long id, TeacherRequest request);
 
     void deleteTeacher(Long id);
 }

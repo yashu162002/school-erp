@@ -25,6 +25,16 @@ public interface AttendanceRepository
             Long studentId,
             LocalDate attendanceDate);
 
+    java.util.Optional<Attendance> findByStudentIdAndAttendanceDateAndSubjectName(
+            Long studentId,
+            LocalDate attendanceDate,
+            String subjectName);
+
+    boolean existsByStudentIdAndAttendanceDateAndSubjectName(
+            Long studentId,
+            LocalDate attendanceDate,
+            String subjectName);
+
     // Analytics Methods
     long countByStudentId(Long studentId);
 

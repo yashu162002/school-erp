@@ -27,6 +27,8 @@ public interface StudentRepository
 
     List<Student> findByClassName(String className);
 
+    List<Student> findByClassNameAndSection(String className, String section);
+
     @Query("SELECT DISTINCT s.className FROM Student s WHERE s.className IS NOT NULL AND s.className <> ''")
     List<String> findDistinctClassNames();
 }

@@ -23,6 +23,8 @@ public class Attendance extends BaseEntity {
     private String status;
 
     private String remarks;
+
+    private String subjectName;
 }
 
 

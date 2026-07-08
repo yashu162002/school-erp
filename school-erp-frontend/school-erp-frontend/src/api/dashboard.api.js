@@ -7,4 +7,5 @@ import { ENDPOINTS } from "@/api/endpoints";
  */
 export const adminDashboardApi = {
   getStats: () => apiClient.get(ENDPOINTS.adminDashboard.stats).then((r) => r.data),
+  getAttendanceStats: () => apiClient.get(`${ENDPOINTS.adminDashboard.stats}/attendance-stats`).then((r) => r.data),
 };

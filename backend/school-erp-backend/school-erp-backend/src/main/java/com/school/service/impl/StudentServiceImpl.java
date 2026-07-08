@@ -114,10 +114,9 @@ public class StudentServiceImpl implements StudentService {
 
         Student savedStudent = repository.save(student);
 
-        // Generate User credential
         String plainPassword = request.getPassword();
         if (plainPassword == null || plainPassword.trim().isEmpty()) {
-            plainPassword = java.util.UUID.randomUUID().toString().substring(0, 8);
+            plainPassword = generateStrongPassword();
         }
 
         User user = User.builder()
@@ -301,5 +300,15 @@ public class StudentServiceImpl implements StudentService {
             }
         }
         return requestedEmail;
+    }
+
+    private String generateStrongPassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$!*";
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 10; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 }

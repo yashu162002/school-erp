@@ -26,4 +26,8 @@ public class AuditLog extends BaseEntity {
 
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
+
+    private String ipAddress;
+
+    private String module;
 }

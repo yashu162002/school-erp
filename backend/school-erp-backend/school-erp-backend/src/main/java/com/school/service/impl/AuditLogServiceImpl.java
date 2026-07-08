@@ -15,11 +15,13 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     @Override
     @Async
-    public void log(String username, String role, String action, String details) {
+    public void log(String username, String role, String action, String module, String ipAddress, String details) {
         AuditLog log = AuditLog.builder()
                 .username(username)
                 .role(role)
                 .action(action)
+                .module(module)
+                .ipAddress(ipAddress)
                 .details(details)
                 .build();
         repository.save(log);

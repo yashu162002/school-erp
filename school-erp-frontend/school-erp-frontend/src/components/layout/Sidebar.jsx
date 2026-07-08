@@ -32,6 +32,7 @@ const ADMIN_NAV_ITEMS = [
   { to: "/admin/notifications", label: "Notifications", icon: Bell },
   { to: "/admin/voice-calls", label: "Voice Calls", icon: PhoneCall },
   { to: "/admin/fees", label: "Fees", icon: Receipt },
+  { to: "/admin/audit-logs", label: "Audit Logs", icon: ClipboardList },
 ];
 
 const STUDENT_NAV_ITEMS = [
@@ -46,11 +47,22 @@ const STUDENT_NAV_ITEMS = [
   { to: "/student/notifications", label: "Notifications", icon: Bell },
 ];
 
+const TEACHER_NAV_ITEMS = [
+  { to: "/teacher/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/teacher/attendance", label: "Class Attendance", icon: CalendarCheck },
+  { to: "/teacher/marks", label: "Marks Entry", icon: ClipboardList },
+];
+
 export function Sidebar({ className, collapsed = false, onNavigate }) {
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const { user } = useAuth();
   
-  const navItems = user?.role === "student" ? STUDENT_NAV_ITEMS : ADMIN_NAV_ITEMS;
+  let navItems = ADMIN_NAV_ITEMS;
+  if (user?.role === "student") {
+    navItems = STUDENT_NAV_ITEMS;
+  } else if (user?.role === "teacher") {
+    navItems = TEACHER_NAV_ITEMS;
+  }
 
   return (
     <nav 

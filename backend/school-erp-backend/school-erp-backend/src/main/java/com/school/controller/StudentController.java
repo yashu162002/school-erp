@@ -167,7 +167,7 @@ public class StudentController {
 
         String plainPassword = (body != null && body.containsKey("password") && !body.get("password").trim().isEmpty())
                 ? body.get("password")
-                : java.util.UUID.randomUUID().toString().substring(0, 8);
+                : generateStrongPassword();
 
         User user = userRepository.findByUsername(student.getStudentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Student login user account not found"));
@@ -243,5 +243,15 @@ public class StudentController {
 
         repository.save(student);
         return service.getStudent(id);
+    }
+
+    private String generateStrongPassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$!*";
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 10; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 }
