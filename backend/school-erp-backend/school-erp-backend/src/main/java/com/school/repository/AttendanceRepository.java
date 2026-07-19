@@ -14,6 +14,8 @@ public interface AttendanceRepository
 
     List<Attendance> findByStudent(Student student);
 
+    void deleteByStudent(Student student);
+
     // Get attendance by student
     List<Attendance> findByStudentId(Long studentId);
 

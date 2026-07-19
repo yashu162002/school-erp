@@ -175,7 +175,14 @@ public class StudentPortalController {
     @GetMapping("/hall-tickets/my-ticket")
     public List<HallTicket> getHallTickets(Principal principal) {
         Student student = getLoggedInStudent(principal);
-        return hallTicketRepository.findByStudentId(student.getId());
+        List<HallTicket> allTickets = hallTicketRepository.findByStudentId(student.getId());
+        List<HallTicket> visibleTickets = new ArrayList<>();
+        for (HallTicket ticket : allTickets) {
+            if ("APPROVED".equalsIgnoreCase(ticket.getStatus()) || "LOCKED".equalsIgnoreCase(ticket.getStatus())) {
+                visibleTickets.add(ticket);
+            }
+        }
+        return visibleTickets;
     }
 
     @GetMapping("/results")

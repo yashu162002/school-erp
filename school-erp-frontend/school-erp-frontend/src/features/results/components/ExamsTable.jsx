@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { examsApi } from "@/api/exams.api";
 import { subjectsApi } from "@/api/subjects.api";
+import { studentsApi } from "@/api/students.api";
+import { hallTicketsApi } from "@/api/hallTickets.api";
 
 export function ExamsTable() {
   const queryClient = useQueryClient();
@@ -40,6 +42,118 @@ export function ExamsTable() {
   const [papers, setPapers] = useState([
     { subjectName: "", examDate: "", dayName: "", startTime: "09:30 AM", endTime: "12:30 PM", roomNumber: "", invigilator: "", instructions: "" }
   ]);
+
+  // Hall Ticket management states
+  const [selectedExamIdForTickets, setSelectedExamIdForTickets] = useState("");
+  const [targetClassForTickets, setTargetClassForTickets] = useState("");
+  const [targetSectionForTickets, setTargetSectionForTickets] = useState("");
+  const [studentsList, setStudentsList] = useState([]);
+  const [hallTicketsList, setHallTicketsList] = useState([]);
+  const [isLoadingTickets, setIsLoadingTickets] = useState(false);
+
+  const loadStudentTickets = async () => {
+    if (!selectedExamIdForTickets) {
+      toast.error("Please select an exam first");
+      return;
+    }
+    if (!targetClassForTickets) {
+      toast.error("Please specify a class name");
+      return;
+    }
+    
+    setIsLoadingTickets(true);
+    try {
+      // 1. Fetch all students
+      const allStudents = await studentsApi.list();
+      // Filter students by class and section
+      const filteredStudents = allStudents.filter(
+        (s) =>
+          s.className?.toString() === targetClassForTickets.toString() &&
+          (!targetSectionForTickets || s.section?.toLowerCase() === targetSectionForTickets.toLowerCase())
+      );
+      setStudentsList(filteredStudents);
+
+      // 2. Fetch hall tickets for the selected exam
+      const allTickets = await hallTicketsApi.list();
+      const filteredTickets = allTickets.filter(
+        (t) => t.exam?.id.toString() === selectedExamIdForTickets.toString()
+      );
+      setHallTicketsList(filteredTickets);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load student hall ticket details");
+    } finally {
+      setIsLoadingTickets(false);
+    }
+  };
+
+  const handleToggleTicket = async (studentId, currentEnabled) => {
+    try {
+      const newStatus = currentEnabled ? "PENDING" : "APPROVED";
+      await hallTicketsApi.toggle({
+        examId: selectedExamIdForTickets,
+        studentId: studentId,
+        status: newStatus
+      });
+      toast.success(`Hall ticket ${currentEnabled ? 'disabled' : 'enabled'} successfully`);
+      
+      // Reload tickets
+      const allTickets = await hallTicketsApi.list();
+      const filteredTickets = allTickets.filter(
+        (t) => t.exam?.id.toString() === selectedExamIdForTickets.toString()
+      );
+      setHallTicketsList(filteredTickets);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update hall ticket status");
+    }
+  };
+
+  const handleEnableAll = async () => {
+    if (studentsList.length === 0) return;
+    try {
+      const studentIds = studentsList.map(s => s.id);
+      await hallTicketsApi.bulkStatus({
+        examId: selectedExamIdForTickets,
+        studentIds: studentIds,
+        status: "APPROVED"
+      });
+      toast.success("All hall tickets enabled successfully");
+      
+      // Reload tickets
+      const allTickets = await hallTicketsApi.list();
+      const filteredTickets = allTickets.filter(
+        (t) => t.exam?.id.toString() === selectedExamIdForTickets.toString()
+      );
+      setHallTicketsList(filteredTickets);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to enable all hall tickets");
+    }
+  };
+
+  const handleDisableAll = async () => {
+    if (studentsList.length === 0) return;
+    try {
+      const studentIds = studentsList.map(s => s.id);
+      await hallTicketsApi.bulkStatus({
+        examId: selectedExamIdForTickets,
+        studentIds: studentIds,
+        status: "PENDING"
+      });
+      toast.success("All hall tickets disabled successfully");
+      
+      // Reload tickets
+      const allTickets = await hallTicketsApi.list();
+      const filteredTickets = allTickets.filter(
+        (t) => t.exam?.id.toString() === selectedExamIdForTickets.toString()
+      );
+      setHallTicketsList(filteredTickets);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to disable all hall tickets");
+    }
+  };
 
   // Queries
   const examsQuery = useQuery({
@@ -438,6 +552,151 @@ export function ExamsTable() {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Hall Ticket Activation Management Card */}
+            <Card className="border border-border mt-8 shadow-sm">
+              <CardHeader className="border-b bg-muted/10">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                      Student Hall Ticket Activation
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Manage hall ticket visibility for students class-wise. Enabled tickets will be visible on student portals.
+                    </p>
+                  </div>
+                  
+                  {/* Bulk actions */}
+                  {studentsList.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-xs border-emerald-500/30 hover:bg-emerald-50/10 hover:text-emerald-500 text-emerald-500 font-semibold transition-all duration-200"
+                        onClick={handleEnableAll}
+                      >
+                        Enable All for Class
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-xs border-destructive/30 hover:bg-destructive/10 hover:text-destructive text-destructive font-semibold transition-all duration-200"
+                        onClick={handleDisableAll}
+                      >
+                        Disable All for Class
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              
+              <CardContent className="p-6 space-y-6">
+                {/* Filter Row */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end bg-muted/20 p-4 rounded-lg border border-border">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Select Exam *</Label>
+                    <Select value={selectedExamIdForTickets} onValueChange={setSelectedExamIdForTickets}>
+                      <SelectTrigger className="bg-background">
+                        <SelectValue placeholder="Choose an exam" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {examsList.map((exam) => (
+                          <SelectItem key={exam.id} value={exam.id.toString()}>
+                            {exam.examName} (Class {exam.className})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Class Name *</Label>
+                    <Input 
+                      placeholder="e.g. 10" 
+                      value={targetClassForTickets}
+                      onChange={(e) => setTargetClassForTickets(e.target.value)}
+                      className="bg-background"
+                    />
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Section (Optional)</Label>
+                    <Input 
+                      placeholder="e.g. A" 
+                      value={targetSectionForTickets}
+                      onChange={(e) => setTargetSectionForTickets(e.target.value)}
+                      className="bg-background"
+                    />
+                  </div>
+                  
+                  <Button 
+                    onClick={loadStudentTickets}
+                    disabled={isLoadingTickets}
+                    className="w-full flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/95 text-primary-foreground font-semibold shadow-sm transition-all duration-200"
+                  >
+                    {isLoadingTickets ? "Loading..." : "Load Students"}
+                  </Button>
+                </div>
+
+                {/* Table/List */}
+                {studentsList.length === 0 ? (
+                  <div className="text-center py-8 border border-dashed rounded-lg bg-muted/10 text-muted-foreground text-sm">
+                    Select an exam and input a class name to load students.
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-border overflow-hidden bg-background">
+                    <Table>
+                      <TableHeader className="bg-muted/40">
+                        <TableRow>
+                          <TableHead className="w-[120px]">Student ID</TableHead>
+                          <TableHead>Student Name</TableHead>
+                          <TableHead>Roll No</TableHead>
+                          <TableHead>Class / Section</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {studentsList.map((student) => {
+                          const ticket = hallTicketsList.find(t => t.student?.id === student.id);
+                          const isEnabled = ticket && ticket.status === "APPROVED";
+                          
+                          return (
+                            <TableRow key={student.id} className="hover:bg-muted/10 transition-colors duration-150">
+                              <TableCell className="font-mono text-xs font-medium">{student.studentId}</TableCell>
+                              <TableCell className="font-semibold text-foreground">
+                                {student.firstName} {student.lastName}
+                              </TableCell>
+                              <TableCell>{student.rollNo || "—"}</TableCell>
+                              <TableCell>
+                                Class {student.className}
+                                {student.section ? `-${student.section}` : ""}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={isEnabled ? "success" : "secondary"} className="transition-all duration-300">
+                                  {isEnabled ? "Enabled" : "Disabled"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant={isEnabled ? "destructive" : "outline"}
+                                  size="sm"
+                                  className="h-8 text-xs font-semibold shadow-sm transition-all duration-200"
+                                  onClick={() => handleToggleTicket(student.id, isEnabled)}
+                                >
+                                  {isEnabled ? "Disable" : "Enable"}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Timetable Scheduling Tab */}

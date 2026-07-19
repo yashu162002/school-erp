@@ -1,6 +1,7 @@
 package com.school.repository;
 
 import com.school.entity.HallTicket;
+import com.school.entity.Student;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,7 @@ import java.util.Optional;
 
 @Repository
 public interface HallTicketRepository extends JpaRepository<HallTicket, Long> {
+    void deleteByStudent(Student student);
     Optional<HallTicket> findByStudentIdAndExamId(Long studentId, Long examId);
     Optional<HallTicket> findByStudentStudentIdAndExamId(String studentId, Long examId);
     List<HallTicket> findByStudentId(Long studentId);

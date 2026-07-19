@@ -40,6 +40,19 @@
   --color-role-parent: #C98A00;
 
   --radius: 0.5rem;
+
+  /* ---- Custom animations ---- */
+  --animate-zoom-slow: zoom-slow 20s ease-in-out infinite;
+  --animate-marquee: marquee 35s linear infinite;
+
+  @keyframes zoom-slow {
+    0%, 100% { transform: scale(1.03); }
+    50% { transform: scale(1.1); }
+  }
+  @keyframes marquee {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-100%); }
+  }
 }
 
 @layer base {

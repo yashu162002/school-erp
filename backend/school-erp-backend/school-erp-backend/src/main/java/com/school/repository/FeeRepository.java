@@ -12,4 +12,5 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
     // Get all fee records of a student
     List<Fee> findByStudentId(Long studentId);
 
+    void deleteByStudentId(Long studentId);
 }

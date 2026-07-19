@@ -9,5 +9,6 @@ import java.util.Optional;
 public interface ParentRepository
         extends JpaRepository<Parent, Long> {
 
+    void deleteByStudent(Student student);
     Optional<Parent> findByStudent(Student student);
 }

@@ -10,10 +10,19 @@ import com.school.exception.ResourceNotFoundException;
 import com.school.repository.StudentRepository;
 import com.school.repository.UserRepository;
 import com.school.repository.ParentRepository;
+import com.school.repository.AttendanceRepository;
+import com.school.repository.HallTicketRepository;
+import com.school.repository.LeaveRequestRepository;
+import com.school.repository.ResultRepository;
+import com.school.repository.StudentActivityRepository;
+import com.school.repository.StudentDocumentRepository;
+import com.school.repository.StudentNotificationRepository;
+import com.school.repository.FeeRepository;
 import com.school.service.StudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -26,6 +35,14 @@ public class StudentServiceImpl implements StudentService {
     private final UserRepository userRepository;
     private final ParentRepository parentRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AttendanceRepository attendanceRepository;
+    private final HallTicketRepository hallTicketRepository;
+    private final LeaveRequestRepository leaveRequestRepository;
+    private final ResultRepository resultRepository;
+    private final StudentActivityRepository studentActivityRepository;
+    private final StudentDocumentRepository studentDocumentRepository;
+    private final StudentNotificationRepository studentNotificationRepository;
+    private final FeeRepository feeRepository;
 
     @Override
     public List<StudentResponse> getAllStudents() {
@@ -215,10 +232,22 @@ public class StudentServiceImpl implements StudentService {
         return mapToResponse(savedStudent);
     }
 
+    @Transactional
     @Override
     public void deleteStudent(Long id) {
         Student student = repository.findById(id).orElse(null);
         if (student != null) {
+            // Delete student-related child records across repositories first
+            attendanceRepository.deleteByStudent(student);
+            hallTicketRepository.deleteByStudent(student);
+            leaveRequestRepository.deleteByStudent(student);
+            resultRepository.deleteByStudent(student);
+            studentActivityRepository.deleteByStudent(student);
+            studentDocumentRepository.deleteByStudent(student);
+            studentNotificationRepository.deleteByStudent(student);
+            parentRepository.deleteByStudent(student);
+            feeRepository.deleteByStudentId(id);
+
             // Delete user login account
             userRepository.findByUsername(student.getStudentId()).ifPresent(user -> {
                 userRepository.delete(user);

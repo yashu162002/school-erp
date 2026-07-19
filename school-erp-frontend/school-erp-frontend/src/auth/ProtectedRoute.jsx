@@ -1,6 +1,7 @@
 // src/auth/ProtectedRoute.jsx
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
+import { GearsLoader } from "@/components/ui/GearsLoader";
 
 /**
  * Guards a route subtree behind authentication only.
@@ -14,10 +15,10 @@ export function ProtectedRoute() {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F6F8]">
         <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="text-gray-600 text-sm">Loading...</p>
+          <GearsLoader className="w-24 h-24" />
+          <p className="text-gray-500 text-[10px] font-bold tracking-[0.2em] uppercase">Checking Authorization...</p>
         </div>
       </div>
     );
