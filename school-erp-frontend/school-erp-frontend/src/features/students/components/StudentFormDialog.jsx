@@ -50,6 +50,10 @@ const EMPTY_VALUES = {
   currentGpa: "",
   currentRank: "",
   photoPath: "",
+  gender: "",
+  dob: "",
+  bloodGroup: "",
+  address: "",
 };
 
 export function StudentFormDialog({ open, onOpenChange, student, onSubmit, isSubmitting }) {

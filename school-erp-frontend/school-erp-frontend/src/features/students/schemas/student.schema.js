@@ -36,4 +36,8 @@ export const studentSchema = z.object({
   currentGpa: numericCoercible,
   currentRank: numericCoercible,
   photoPath: z.string().optional().or(z.literal("")),
+  gender: z.string().optional().or(z.literal("")),
+  dob: z.string().optional().or(z.literal("")),
+  bloodGroup: z.string().optional().or(z.literal("")),
+  address: z.string().optional().or(z.literal("")),
 });
